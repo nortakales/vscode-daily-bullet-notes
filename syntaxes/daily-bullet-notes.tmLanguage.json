@@ -1,0 +1,47 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Daily Bullet Notes",
+	"scopeName": "source.daily-bullet-notes",
+	"patterns": [
+		{
+			"comment": "Box header horizontal lines",
+			"name": "constant.character",
+			"match": "^\\+\\-{20,100}\\+$"
+		},
+		{
+			"comment": "Box header title and vertical lines",
+			"name": "constant.character",
+			"match": "^\\|\\s+([\\w\\s]+)\\|$"
+		},
+		{
+			"comment": "Daily headers",
+			"name": "entity.name.function",
+			"match": "^\\d{1,2}(/\\d{1,2})? \\-{20,100}( < Today)?$"
+		},
+		{
+			"comment": "Empty Checkbox",
+			"name": "support.function",
+			"match": "\\[\\]"
+		},
+		{
+			"comment": "Completed Checkbox",
+			"name": "keyword",
+			"match": "\\[[xX]\\]"
+		},
+		{
+			"comment": "Progress Checkbox",
+			"name": "constant.character",
+			"match": "\\[\\+\\]"
+		},
+		{
+			"comment": "Cancelled Checkbox",
+			"name": "string",
+			"match": "\\[\\-\\]"
+		},
+		{
+			"comment": "Blocked Checkbox",
+			"name": "constant.numeric",
+			"match": "\\[/\\]"
+		}
+	]
+}
