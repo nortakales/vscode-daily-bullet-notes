@@ -3,6 +3,10 @@
   "displayName": "Daily Bullet Notes",
   "description": "Extension to assist in daily task, todo list and note taking. Quickly keep track of what you did and need to do for the day. Perfect for standup updates the next day, and remembering what you worked on throughout the year.",
   "publisher": "nortakales",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nortakales/vscode-daily-bullet-notes.git"
+  },
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.95.0"
