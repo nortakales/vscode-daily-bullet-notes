@@ -6,7 +6,7 @@ class DBMFoldingRangeProvider implements vscode.FoldingRangeProvider {
 
     provideFoldingRanges(document: vscode.TextDocument, context: vscode.FoldingContext, token: vscode.CancellationToken): vscode.FoldingRange[] {
         const parser = new Parser(document);
-        const parsedDocument = parser.parseHeirarchy();
+        const parsedDocument = parser.parseDocument();
 
         const ranges: vscode.FoldingRange[] = [];
 

@@ -7,6 +7,7 @@ export interface DailyBulletNotesDocument {
 
 export interface DailyLog {
     yearSections: YearSection[]
+    mostRecentDay?: DailySection;
 
     range: FoldingRange;
 }
@@ -22,11 +23,13 @@ export interface MonthSection {
     monthTitle: string;
     month: number;
     dailySections: DailySection[]
+    yearSection?: YearSection
 
     range: FoldingRange;
 }
 export interface DailySection {
     day: number;
+    monthSection?: MonthSection;
 
     range: FoldingRange;
 }

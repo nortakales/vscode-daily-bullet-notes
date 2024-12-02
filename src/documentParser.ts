@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { DailyBulletNotesDocument, DailyLog, DailySection, ListSection, MonthSection, YearSection } from './documentModel';
+import { getMonthFromString } from './strings';
 
 class Parser {
 
@@ -17,7 +18,7 @@ class Parser {
         this.document = document;
     }
 
-    public parseHeirarchy(): DailyBulletNotesDocument {
+    public parseDocument(): DailyBulletNotesDocument {
 
         let currentDailyHeaderIndex: number | null = null;
 
@@ -41,6 +42,7 @@ class Parser {
         let previousMonth: string | null = null;
         let currentMonth: string | null = null;
         let currentDaySections: DailySection[] = [];
+        let mostRecentDay: DailySection | undefined;
 
         let currentDay: number | null = null;
 
@@ -56,12 +58,13 @@ class Parser {
             if (dailyHeaderMatcher) {
 
                 if (currentDailyHeaderIndex !== null) {
-
                     // Close out the previous day
-                    currentDaySections.push({
+                    const day = {
                         day: currentDay!,
                         range: new vscode.FoldingRange(currentDailyHeaderIndex, lineNumber - 1),
-                    });
+                    };
+                    currentDaySections.push(day);
+                    mostRecentDay = day;
                 }
                 // Start a new day
                 currentDay = +dailyHeaderMatcher[2];
@@ -83,12 +86,17 @@ class Parser {
                         // Close last month box
                         let lastMonthIndex = lastBoxIndex.month;
                         if (lastMonthIndex !== null && lastLineBeforeCurrentBox !== null) {
-                            currentMonthSections.push({
+                            const monthSection = {
                                 monthTitle: previousMonth!,
-                                month: this.getMonthFromString(previousMonth!),
+                                month: getMonthFromString(previousMonth!),
                                 dailySections: currentDaySections,
                                 range: new vscode.FoldingRange(lastMonthIndex, lastLineBeforeCurrentBox)
-                            });
+                            };
+                            // Set up reverse reference
+                            for (const dailySection of monthSection.dailySections) {
+                                dailySection.monthSection = monthSection;
+                            }
+                            currentMonthSections.push(monthSection);
                             previousMonth = null;
                             currentDaySections = [];
                             lastBoxIndex.month = null;
@@ -100,11 +108,16 @@ class Parser {
 
                         let lastYearIndex = lastBoxIndex.year;
                         if (lastYearIndex !== null && lastLineBeforeCurrentBox !== null) {
-                            yearSections.push({
+                            const yearSection = {
                                 year: previousYear!,
                                 monthSections: currentMonthSections,
                                 range: new vscode.FoldingRange(lastYearIndex, lastLineBeforeCurrentBox)
-                            });
+                            };
+                            // Set up reverse reference
+                            for (const monthSection of yearSection.monthSections) {
+                                monthSection.yearSection = yearSection;
+                            }
+                            yearSections.push(yearSection);
                             previousYear = null;
                             currentMonthSections = [];
                             lastBoxIndex.year = null;
@@ -118,7 +131,8 @@ class Parser {
                         if (dailyLogIndex !== null && lastLineBeforeCurrentBox !== null) {
                             dailyLog = {
                                 yearSections: yearSections,
-                                range: new vscode.FoldingRange(dailyLogIndex, lastLineBeforeCurrentBox)
+                                range: new vscode.FoldingRange(dailyLogIndex, lastLineBeforeCurrentBox),
+                                mostRecentDay: mostRecentDay
                             };
                             lastBoxIndex.dailyLog = null;
                         }
@@ -151,10 +165,12 @@ class Parser {
 
                     if (currentDailyHeaderIndex !== null) {
                         // Close out the previous day
-                        currentDaySections.push({
+                        const day = {
                             day: currentDay!,
                             range: new vscode.FoldingRange(currentDailyHeaderIndex, lineNumber - 1),
-                        });
+                        };
+                        currentDaySections.push(day);
+                        mostRecentDay = day;
                         currentDailyHeaderIndex = null;
                         currentDay = null;
                     }
@@ -188,26 +204,47 @@ class Parser {
 
         // If we have unclosed box ranges, close them at the end of the file
 
+        if (currentDailyHeaderIndex !== null) {
+            // Close out the previous day
+            const day = {
+                day: currentDay!,
+                range: new vscode.FoldingRange(currentDailyHeaderIndex, this.document.lineCount - 1),
+            };
+            currentDaySections.push(day);
+            mostRecentDay = day;
+        }
+
         if (lastBoxIndex.month !== null) {
-            currentMonthSections.push({
+            const monthSection = {
                 monthTitle: currentMonth!,
-                month: this.getMonthFromString(currentMonth!),
+                month: getMonthFromString(currentMonth!),
                 dailySections: currentDaySections,
                 range: new vscode.FoldingRange(lastBoxIndex.month, this.document.lineCount - 1)
-            });
+            };
+            // Set up reverse reference
+            for (const dailySection of monthSection.dailySections) {
+                dailySection.monthSection = monthSection;
+            }
+            currentMonthSections.push(monthSection);
         }
 
         if (lastBoxIndex.year !== null) {
-            yearSections.push({
+            const yearSection = {
                 year: currentYear!,
                 monthSections: currentMonthSections,
                 range: new vscode.FoldingRange(lastBoxIndex.year, this.document.lineCount - 1)
-            });
+            };
+            // Set up reverse reference
+            for (const monthSection of yearSection.monthSections) {
+                monthSection.yearSection = yearSection;
+            }
+            yearSections.push(yearSection);
         }
         if (lastBoxIndex.dailyLog !== null) {
             dailyLog = {
                 yearSections: yearSections,
-                range: new vscode.FoldingRange(lastBoxIndex.dailyLog, this.document.lineCount - 1)
+                range: new vscode.FoldingRange(lastBoxIndex.dailyLog, this.document.lineCount - 1),
+                mostRecentDay: mostRecentDay
             };
         }
         if (lastBoxIndex.list !== null) {
@@ -217,33 +254,12 @@ class Parser {
             });
         }
 
-        // TODO unclosed daily range (e.g. no lists)?
 
         return {
             dailyLog: dailyLog!,
             listSections: listSections
         };
     }
-
-    private getMonthFromString(month: string) {
-        return this.months.indexOf(month) + 1;
-    }
-
-    private months = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December'
-    ]
-
 }
 
 interface BoxIndexes {
