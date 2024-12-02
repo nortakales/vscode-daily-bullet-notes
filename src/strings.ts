@@ -1,6 +1,6 @@
 export function getBoxHeader(title: string) {
     // TODO load width preference
-    const width = 43;
+    const width = 42;
     const horizontalLine = `+${'-'.repeat(width - 2)}+`;
     const totalSpaces = width - 2 - title.length;
     const centerLineSpaces = ' '.repeat(totalSpaces / 2);
@@ -13,7 +13,7 @@ export function getDailyHeader(month: number, day: number, isToday: boolean = fa
     // TODO get month/day preference
     const includeMonth = true;
     // TODO get width preference
-    const width = 43;
+    const width = 42;
     const monthDayText = `${includeMonth ? month : ''}/${day}`;
     const todayText = isToday ? ' < Today' : '';
     const totalDashes = width - 1 - monthDayText.length - todayText.length;

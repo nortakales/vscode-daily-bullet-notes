@@ -6,8 +6,9 @@ import { getBoxHeader, getDailyHeader, getMonthFromString, getStringFromMonth } 
 class Commands {
 
     public constructor(context: vscode.ExtensionContext) {
-        this.registerCommand(context, "daily-bullet-notes.addNextDay", this.addNextDay);
         this.registerCommand(context, "daily-bullet-notes.addToday", this.addToday);
+        this.registerCommand(context, "daily-bullet-notes.addNewList", this.addNewList);
+        this.registerCommand(context, "daily-bullet-notes.standupView", this.standupView);
     }
 
     private registerCommand(
@@ -27,14 +28,6 @@ class Commands {
         const disposable = vscode.commands.registerCommand(commandName, commandToExecute);
 
         context.subscriptions.push(disposable);
-    }
-
-    addNextDay() {
-        const filename = vscode.window.activeTextEditor?.document.fileName;
-        console.log(filename);
-        const parser = new Parser(vscode.window.activeTextEditor?.document!);
-        const parsed = parser.parseDocument();
-        console.log(parsed);
     }
 
     addToday() {
@@ -61,16 +54,20 @@ class Commands {
 
         const mostRecentDay = doc.dailyLog.mostRecentDay;
         if (!mostRecentDay) {
-            // add year month day and )maybe daily log)?
+            // add year month day and (maybe daily log)?
+            // TODO pop up dialog box asking to start from a new template
         } else {
 
             const mostRecentYear = mostRecentDay.monthSection?.yearSection?.year;
             const mostRecentMonth = mostRecentDay.monthSection?.month;
 
             if (mostRecentYear === year && mostRecentMonth === month && mostRecentDay.day === day) {
-                // TODO move cursor to current day
-                // TODO message box popup
-                console.log("Today already added, nothing to do");
+
+                const startPosition = new vscode.Position(mostRecentDay.range.start, 0);
+                const endPosition = new vscode.Position(mostRecentDay.range.end, 0);
+                editor.selection = new vscode.Selection(endPosition, endPosition);
+                editor.revealRange(new vscode.Range(startPosition, endPosition), vscode.TextEditorRevealType.InCenter);
+                vscode.window.showInformationMessage("Today already exists");
                 return;
             }
 
@@ -90,6 +87,7 @@ class Commands {
             // Set cursor just after the last month (it will be moved up later)
             const newCursorPosition = new vscode.Position(mostRecentDay!.range.end + 1, 0);
             editor.selection = new vscode.Selection(newCursorPosition, newCursorPosition);
+            editor.revealRange(new vscode.Range(newCursorPosition, newCursorPosition), vscode.TextEditorRevealType.InCenter);
 
             editor.edit(editBuilder => {
                 const lineToInsertOn = mostRecentDay!.range.end;
@@ -97,7 +95,7 @@ class Commands {
                 editBuilder.insert(new vscode.Position(lineToInsertOn, endOfLine), "\n" + edits.join("\n") + "\n");
             }).then(() => {
                 // TODO Only if cursor not at end of doc?
-                moveCursorUpNLines(2);
+                moveCursorUpNLines(1);
             });
         }
 
@@ -174,6 +172,96 @@ class Commands {
         //         moveCursorUpNLines(2);
         //     });
         // }
+    }
+
+    async addNewList() {
+
+
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            console.log("Could not detect editor");
+            return;
+        }
+        // const parser = new Parser(editor.document);
+        // const doc = parser.parseDocument();
+
+
+        // TODO get width preference
+        const width = 42;
+
+        const newListTitle = await vscode.window.showInputBox({
+            prompt: "Enter the name of your new list",
+            title: "New List",
+            validateInput: (currentValue) => {
+                if (!currentValue) {
+                    return "Must enter a title for your new list";
+                }
+                if (currentValue.length > (width - 2)) {
+                    return "Title is too long to fit within your preferred width of " + width;
+                }
+            }
+        });
+
+        if (!newListTitle) {
+            return;
+        }
+
+        const newListBox = getBoxHeader(newListTitle);
+
+        editor.edit(editBuilder => {
+            const finalLine = editor.document.lineAt(editor.document.lineCount - 1);
+            const endOfLine = finalLine.range.end.character;
+            editBuilder.insert(new vscode.Position(editor.document.lineCount - 1, endOfLine), `\n${newListBox}\n`);
+        }).then(() => {
+
+            const newCursorPosition = new vscode.Position(editor.document.lineCount - 1, 0);
+            editor.selection = new vscode.Selection(newCursorPosition, newCursorPosition);
+            editor.revealRange(new vscode.Range(newCursorPosition, newCursorPosition), vscode.TextEditorRevealType.InCenter);
+        });
+
+    }
+
+    async standupView() {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            console.log("Could not detect editor");
+            return;
+        }
+
+        const parser = new Parser(editor.document);
+        const doc = parser.parseDocument();
+
+        const mostRecentDay = doc.dailyLog.mostRecentDay;
+        if (!mostRecentDay) {
+            // TODO
+            return;
+        }
+
+        // TODO what if most recent day is not today
+
+        const linesToUnfold = [];
+
+        linesToUnfold.push(mostRecentDay.range.start);
+        if (mostRecentDay.previousDailySection) {
+            linesToUnfold.push(mostRecentDay.previousDailySection.range.start);
+        }
+
+        await vscode.commands.executeCommand("editor.foldAll");
+
+        // https://code.visualstudio.com/api/references/commands
+        await vscode.commands.executeCommand("editor.unfold", {
+            levels: 99, // unfold as much as needed
+            direction: "up",
+            selectionLines: linesToUnfold
+        });
+
+        const startPosition = new vscode.Position(mostRecentDay.previousDailySection ?
+            mostRecentDay.previousDailySection.range.start :
+            mostRecentDay.range.start,
+            0);
+        const endPosition = new vscode.Position(mostRecentDay.range.end, 0);
+        editor.selection = new vscode.Selection(endPosition, endPosition);
+        editor.revealRange(new vscode.Range(startPosition, endPosition), vscode.TextEditorRevealType.InCenter);
     }
 }
 

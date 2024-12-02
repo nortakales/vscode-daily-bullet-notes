@@ -1,12 +1,9 @@
 import * as vscode from 'vscode';
 import DBMUIElements from './uiElements';
-import DBMFoldingRangeProviderOld from './foldingRangeProviderOld';
 import Commands from './commands';
 import DBMFoldingRangeProvider from './foldingRangeProvider';
 
 export function activate(context: vscode.ExtensionContext) {
-
-
 
 	const uielements = new DBMUIElements(context);
 

@@ -15,14 +15,19 @@
   "contributes": {
     "commands": [
       {
-        "command": "daily-bullet-notes.addNextDay",
-        "title": "Add Next Chronological Day",
-        "icon": "$(plus)"
-      },
-      {
         "command": "daily-bullet-notes.addToday",
         "title": "Add Today",
         "icon": "$(plus)"
+      },
+      {
+        "command": "daily-bullet-notes.addNewList",
+        "title": "Add New List",
+        "icon": "$(plus)"
+      },
+      {
+        "command": "daily-bullet-notes.standupView",
+        "title": "Standup View",
+        "icon": "$(preview)"
       }
     ],
     "languages": [
@@ -48,7 +53,7 @@
       "editor/title": [
         {
           "submenu": "daily-bullet-notes.add",
-          "group": "daily-bullet-notes"
+          "group": "navigation"
         }
       ],
       "editor/context": [
@@ -59,7 +64,15 @@
       ],
       "daily-bullet-notes.add": [
         {
-          "command": "daily-bullet-notes.addNextDay",
+          "command": "daily-bullet-notes.addToday",
+          "when": "editorLangId == daily-bullet-notes"
+        },
+        {
+          "command": "daily-bullet-notes.addNewList",
+          "when": "editorLangId == daily-bullet-notes"
+        },
+        {
+          "command": "daily-bullet-notes.standupView",
           "when": "editorLangId == daily-bullet-notes"
         }
       ]
@@ -68,7 +81,7 @@
       {
         "id": "daily-bullet-notes.add",
         "label": "Daily Bullet Notes",
-        "icon": "$(calendar)"
+        "icon": "$(tasklist)"
       }
     ]
   },

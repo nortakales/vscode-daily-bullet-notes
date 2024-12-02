@@ -1,6 +1,6 @@
 # daily-bullet-notes README
 
-TBD
+This extension is not yet complete.
 
 ## Features
 
@@ -19,7 +19,7 @@ None yet
 
 ### 0.0.1
 
-Initial release
+Initial version - not yet complete, many bugs
 
 # TODO
 
@@ -40,6 +40,9 @@ Initial release
 [] command to add vacation/sick days
 [] command to start a brand new log
 [] formatter (remove extra empty lines, format headers and boxes to correct width, set today, indenting?)
+[] "standup view" which collapses all but yesterday and today
+[] add tomorrow command
+[] setting to skip weekends for add tomorrow
 
 [] next day command
 when adding a day, submenu options:

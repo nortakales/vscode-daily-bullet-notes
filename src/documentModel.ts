@@ -30,6 +30,8 @@ export interface MonthSection {
 export interface DailySection {
     day: number;
     monthSection?: MonthSection;
+    previousDailySection?: DailySection;
+    nextDailySection?: DailySection;
 
     range: FoldingRange;
 }

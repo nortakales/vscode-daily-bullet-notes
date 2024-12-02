@@ -8,7 +8,7 @@ class Parser {
     private dailyLogTitleLineRegex = /^\|\s+Daily Log\s+\|/;
     private yearBoxTitleLineRegex = /^\|\s+(\d{4})\s+\|/;
     private monthBoxTitleLineRegex = /^\|\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+\|/;
-    private listBoxTitleLineRegex = /^\|\s+([^\s]+)\s+\|/;
+    private listBoxTitleLineRegex = /^\|\s+([^\s]+.*?)\s+\|/;
 
     private dailyHeaderRegex = /^\d{1,2}(\/(\d{1,2}))? \-{20,100}( < Today)?/;
 
@@ -51,6 +51,7 @@ class Parser {
         let listSections: ListSection[] = [];
 
 
+
         for (let lineNumber = 0; lineNumber < this.document.lineCount; lineNumber++) {
             const line = this.document.lineAt(lineNumber);
 
@@ -62,8 +63,12 @@ class Parser {
                     const day = {
                         day: currentDay!,
                         range: new vscode.FoldingRange(currentDailyHeaderIndex, lineNumber - 1),
+                        previousDailySection: mostRecentDay
                     };
                     currentDaySections.push(day);
+                    if (mostRecentDay) {
+                        mostRecentDay.nextDailySection = day;
+                    }
                     mostRecentDay = day;
                 }
                 // Start a new day
@@ -168,8 +173,12 @@ class Parser {
                         const day = {
                             day: currentDay!,
                             range: new vscode.FoldingRange(currentDailyHeaderIndex, lineNumber - 1),
+                            previousDailySection: mostRecentDay
                         };
                         currentDaySections.push(day);
+                        if (mostRecentDay) {
+                            mostRecentDay.nextDailySection = day;
+                        }
                         mostRecentDay = day;
                         currentDailyHeaderIndex = null;
                         currentDay = null;
@@ -209,7 +218,11 @@ class Parser {
             const day = {
                 day: currentDay!,
                 range: new vscode.FoldingRange(currentDailyHeaderIndex, this.document.lineCount - 1),
+                previousDailySection: mostRecentDay
             };
+            if (mostRecentDay) {
+                mostRecentDay.nextDailySection = day;
+            }
             currentDaySections.push(day);
             mostRecentDay = day;
         }
