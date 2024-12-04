@@ -1,6 +1,8 @@
 # Daily Bullet Notes
 
-This VSCode extension is designed specifically around my way of tracking daily tasks at work. It is pretty close to "Bullet Journalling" I believe. I started this method in 2016, and it has worked for nearly a decade at this point. This method, which I'll describe below, is particularly useful at helping me track everything I need to do, but also all of the things I have done as well. It's a good resource for your daily standup, and also to remind you what you worked on throughout an entire year for a yearly self review.
+![ ](images/icon-256.png)
+
+This VSCode extension is designed specifically around my way of tracking daily tasks at work. It is pretty close to the popular "Bullet Journal" method. I started my particular method in 2016, and it has worked for nearly a decade at this point. This method, which I'll describe below, is particularly useful at helping me track everything I need to do, but also all of the things I have done. It's a good resource for your daily standup meeting, and also to remind you what you worked on throughout an entire year for a yearly self review. Or use it outside of work to keep track of personal tasks.
 
 Here is how my method works:
 1. Each day contains a list of tasks. This list should contain everything I plan to do, everything I have done, and possibly some tasks I know I won't get to yet but still want to keep track of on a daily basis.
@@ -16,14 +18,22 @@ Here is how my method works:
 
 Below these daily tasks, I also keep a few lists. These are just small lists meant to help me track things that might not make sense in the context of a particular day. Examples are tasks on my "backburner", ideas for upcoming hackathons, or career goals.
 
-## Features
+The main benefits of this method to me are:
+1. **Simple** - no fancy apps, just a text file
+2. **Searchable** - just hit Ctrl+F and find anything
+3. **Fast** - no process to get in your way
+4. **Scalable** - archive older years in separate files
+5. **Portable** - use any service to sync your file wherever you desire
 
-TBD
+## Extension Features
 
+1. **Syntax highlighting** - year/month/day headers, list headers and task boxes are all colored
+2. **Folding** - fold years/months/days and lists
+3. **Commands** - a bunch of built in commands to help manage your tasks
 
 ## Extension Settings
 
-None yet, there will be eventually.
+None yet, there will be some eventually!
 
 ## Known Issues
 
@@ -32,34 +42,41 @@ None yet, there will be eventually.
 
 ## Change Log
 
-### 0.0.1
+### 0.0.2 / 2024-12-3
 
-Initial version - not yet complete, many bugs
+* Updated readme with extension overview
+* Progress/blocked/etc markers are removed from task boxes when copied to today so your new day starts with a clean slate
+
+### 0.0.1 / 2024-12-1
+
+* Initial version - not yet complete, many bugs
 
 # Upcoming Features (aka Todo List)
 
-* [] goto today command (standup view is basically the same, and complete)
-* [] archive previous year command
-* [] archive previous month command
-* [] auto archive setting
-* [] archive location setting
-* [] daily log location setting
+* [ ] goto today command (standup view is basically the same, and complete)
+* [ ] archive previous year command
+* [ ] archive previous month command
+* [ ] auto archive setting
+* [ ] archive location setting
+* [ ] daily log location setting
 * [x] show month/year text when folded
 * [x] add new list command
-* [] collapse all previous months
-* [] collapse all previous years
+* [ ] collapse all previous months
+* [ ] collapse all previous years
 * [x] collapse all but today and yesterday (standup view)
-* [] setting to include month/day or just day in daily header
-* [] set width of headers
-* [] consider what happens if you skipped some days
-* [] command to add vacation/sick days
-* [] command to start a brand new dbm file from a template
-* [] formatter (remove extra empty lines, format headers and boxes to correct width, set special header on today, indenting?)
-* [] add tomorrow command
-* [] setting to skip weekends for add tomorrow
-* [] next day command with possible sub-commands:
+* [ ] setting to include month/day or just day in daily header
+* [ ] set width of headers
+* [ ] consider what happens if you skipped some days
+* [ ] command to add vacation/sick days
+* [ ] command to start a brand new dbm file from a template
+* [ ] formatter (remove extra empty lines, format headers and boxes to correct width, set special header on today, indenting?)
+* [ ] add tomorrow command
+* [ ] setting to skip weekends for add tomorrow
+* [ ] next day command with possible sub-commands:
     * add current day (skip missing days since last day)
     * add next day after last day
     * add sick/vacation day
-* [] support days in the future
-* [] update main task box based on sub-task status
+* [ ] support days in the future
+* [ ] update main task box based on sub-task status
+* [ ] Readme updates
+  * [ ] Include some examples
