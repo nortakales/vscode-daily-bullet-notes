@@ -299,12 +299,16 @@ function removeCompleteAndCancelledContent(content: string | undefined) {
         return undefined;
     }
     // TODO a setting to preserve un-indented notes, not just tasks
+
     const lines = content.split(/\r?\n/);
     const linesToKeep = [];
     let shouldKeepNextIndentedLines = false;
     for (let line of lines) {
-        if (line.match(/^\s*\[[^x\-]?\]/)) {
-            linesToKeep.push(line);
+        let match = line.match(/^\s*(\[[^x\-]?\])/)
+        if (match) {
+            // clear out any progress/blocked/etc markers
+            const modifiedLine = line.replace(match[1], '[]');
+            linesToKeep.push(modifiedLine);
             shouldKeepNextIndentedLines = true;
         } else if (line.match(/^\s/)) {
             if (shouldKeepNextIndentedLines) {
