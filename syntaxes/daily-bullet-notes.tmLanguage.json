@@ -21,7 +21,7 @@
 		{
 			"comment": "Empty Checkbox",
 			"name": "support.function",
-			"match": "\\[\\]"
+			"match": "\\[\\s?\\]"
 		},
 		{
 			"comment": "Completed Checkbox",
