@@ -2,7 +2,37 @@
 
 ![ ](images/icon-256.png)
 
-This VSCode extension is designed specifically around my way of tracking daily tasks at work. It is pretty close to the popular "Bullet Journal" method. I started my particular method in 2016, and it has worked for nearly a decade at this point. This method, which I'll describe below, is particularly useful at helping me track everything I need to do, but also all of the things I have done. It's a good resource for your daily standup meeting, and also to remind you what you worked on throughout an entire year for a yearly self review. Or use it outside of work to keep track of personal tasks.
+This VSCode extension is designed specifically around my way of tracking daily tasks at work. It is pretty close to the popular "Bullet Journal" method. I started my particular method in 2016, and it has worked for nearly a decade at this point. This method, which I'll describe below, is particularly useful at helping me track everything I need to do, but also all of the things I have done. It's a good resource for your daily standup meeting, and also to track what you worked on throughout an entire year for a yearly self review. Or use it outside of work to keep track of personal tasks too.
+
+Here is an example
+```
++----------------------------------------+
+|                  2024                  |
++----------------------------------------+
++----------------------------------------+
+|                December                |
++----------------------------------------+
+12/4 -------------------------------------
+here is whatever you did yesterday
+
+12/5 -------------------------------------
+and this is today
+[x] this task is complete
+[/] this task is blocked, you are waiting on someone or something before more progress can be made
+[-] this task is either no longer relevant or tracked by someone else now
+[+] you made some progress on this task today, but it isn't done yet
+[ ] this task is ready and waiting to be worked on
+Here is a quick note you took about the day, like you took the afternoon off or attended an event
+
++----------------------------------------+
+|              Example List              |
++----------------------------------------+
+This is an example where you might keep things like your career goals,
+longstanding tasks on your backburner, ideas for an upcoming hackathon,
+some inspirational quotes, or even just your last meeting notes.
+You can create many lists like this, and they wil always live just below
+your latest daily entry.
+```
 
 Here is how my method works:
 1. Each day contains a list of tasks. This list should contain everything I plan to do, everything I have done, and possibly some tasks I know I won't get to yet but still want to keep track of on a daily basis.
@@ -16,14 +46,19 @@ Here is how my method works:
 4. As I work on tasks throughout the day, I update their status. If I work on something unplanned, I add it to my list with the appropriate status.
 5. At the start of each day, I copy the previous day's list. I remove tasks that are done `[x]` or no longer needed `[-]`, and keep all other tasks. All these tasks will start with an empty `[ ]`, and I will immediately update their status as needed (e.g. if I already know something is blocked for the day).
 
-Below these daily tasks, I also keep a few lists. These are just small lists meant to help me track things that might not make sense in the context of a particular day. Examples are tasks on my "backburner", ideas for upcoming hackathons, or career goals.
+Below these daily tasks, I also keep a few lists or notes. These are just small lists meant to help me track things that might not make sense in the context of a particular day. Examples are tasks on my "backburner", ideas for upcoming hackathons, career goals or inspirational quotes.
 
 The main benefits of this method to me are:
 1. **Simple** - no fancy apps, just a text file
 2. **Searchable** - just hit Ctrl+F and find anything
-3. **Fast** - no process to get in your way
-4. **Scalable** - archive older years in separate files
+3. **Fast** - no fancy process or system to get in your way
+4. **Scalable** - archive older years in a separate file to keep your main log small
 5. **Portable** - use any service to sync your file wherever you desire
+
+## Getting Started
+
+1. Get this extension
+2. Run [New DBM File](command:daily-bullet-notes.newFile) to create a new file from a template that will get you started
 
 ## Extension Features
 
@@ -31,9 +66,13 @@ The main benefits of this method to me are:
 2. **Folding** - fold years/months/days and lists
 3. **Commands** - a bunch of built in commands to help manage your tasks
 
+## Commands
+
+Table of commands coming soon...
+
 ## Extension Settings
 
-None yet, there will be some eventually!
+None yet, there will be some customization eventually
 
 ## Known Issues
 
@@ -42,12 +81,20 @@ None yet, there will be some eventually!
 
 ## Change Log
 
-### 0.0.2 / 2024-12-3
+### 0.0.3 - 2024-12-5
+
+* Fixed bug where `[x]` or `[-]` sub-tasks were not removed on next day
+* `[ ]` is now highlighted just like `[]`
+* Added [New DBM File](command:daily-bullet-notes.newFile) command which will create a new file with a template to get new users started
+* Readme updates to get new users started
+* Added a separate CHANGELOG.md for VSCode
+
+### 0.0.2 - 2024-12-3
 
 * Updated readme with extension overview
 * Progress/blocked/etc markers are removed from task boxes when copied to today so your new day starts with a clean slate
 
-### 0.0.1 / 2024-12-1
+### 0.0.1 - 2024-12-1
 
 * Initial version - not yet complete, many bugs
 
@@ -68,7 +115,7 @@ None yet, there will be some eventually!
 * [ ] set width of headers
 * [ ] consider what happens if you skipped some days
 * [ ] command to add vacation/sick days
-* [ ] command to start a brand new dbm file from a template
+* [x] command to start a brand new dbm file from a template
 * [ ] formatter (remove extra empty lines, format headers and boxes to correct width, set special header on today, indenting?)
 * [ ] add tomorrow command
 * [ ] setting to skip weekends for add tomorrow
@@ -80,3 +127,13 @@ None yet, there will be some eventually!
 * [ ] update main task box based on sub-task status
 * [ ] Readme updates
   * [ ] Include some examples
+  * [x] getting started section
+  * [ ] table of commands
+* [ ] ability to add recurring todos on a specific day of week or date or maybe cadance, or even just once on a specific date
+* [x] bug: x and - is not removed if indented, but others are cleared
+* [ ] add [] when adding new line after a task
+* [x] bug: syntax highlight [ ]
+* [ ] preference for [] vs [ ]
+* [ ] refactor commands into separate classes
+* [ ] auto format a box if you have a space and enter an x, like [ x] or [x ]
+* [ ] bug? folding is not provided on brand new unsaved file

@@ -21,7 +21,7 @@
   "keywords": [
     "bullet journal"
   ],
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -35,14 +35,19 @@
         "icon": "$(plus)"
       },
       {
+        "command": "daily-bullet-notes.standupView",
+        "title": "Standup View",
+        "icon": "$(preview)"
+      },
+      {
         "command": "daily-bullet-notes.addNewList",
         "title": "Add New List",
         "icon": "$(plus)"
       },
       {
-        "command": "daily-bullet-notes.standupView",
-        "title": "Standup View",
-        "icon": "$(preview)"
+        "command": "daily-bullet-notes.newFile",
+        "title": "New DBM File",
+        "icon": "$(new-file)"
       }
     ],
     "languages": [
@@ -67,17 +72,17 @@
     "menus": {
       "editor/title": [
         {
-          "submenu": "daily-bullet-notes.add",
+          "submenu": "daily-bullet-notes.main",
           "group": "navigation"
         }
       ],
       "editor/context": [
         {
-          "submenu": "daily-bullet-notes.add",
+          "submenu": "daily-bullet-notes.main",
           "group": "daily-bullet-notes"
         }
       ],
-      "daily-bullet-notes.add": [
+      "daily-bullet-notes.main": [
         {
           "command": "daily-bullet-notes.addToday",
           "when": "editorLangId == daily-bullet-notes"
@@ -94,7 +99,7 @@
     },
     "submenus": [
       {
-        "id": "daily-bullet-notes.add",
+        "id": "daily-bullet-notes.main",
         "label": "Daily Bullet Notes",
         "icon": "$(tasklist)"
       }
