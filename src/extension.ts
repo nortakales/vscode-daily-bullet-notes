@@ -6,6 +6,7 @@ import { addToday } from './commands/addToday';
 import { addNewList } from './commands/addNewList';
 import { standupView } from './commands/standupView';
 import { newFile } from './commands/newFile';
+import { addTodayAndStandupView } from './commands/addTodayAndStandupView';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -27,6 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("daily-bullet-notes.addToday", addToday),
+		vscode.commands.registerCommand("daily-bullet-notes.addTodayAndStandupView", addTodayAndStandupView),
 		vscode.commands.registerCommand("daily-bullet-notes.addNewList", addNewList),
 		vscode.commands.registerCommand("daily-bullet-notes.standupView", standupView),
 		vscode.commands.registerCommand("daily-bullet-notes.newFile", newFile),

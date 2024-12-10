@@ -30,6 +30,11 @@
   "contributes": {
     "commands": [
       {
+        "command": "daily-bullet-notes.addTodayAndStandupView",
+        "title": "Add Today + Standup View",
+        "icon": "$(diff-added)"
+      },
+      {
         "command": "daily-bullet-notes.addToday",
         "title": "Add Today",
         "icon": "$(plus)"
@@ -83,6 +88,10 @@
         }
       ],
       "daily-bullet-notes.main": [
+        {
+          "command": "daily-bullet-notes.addTodayAndStandupView",
+          "when": "editorLangId == daily-bullet-notes"
+        },
         {
           "command": "daily-bullet-notes.addToday",
           "when": "editorLangId == daily-bullet-notes"

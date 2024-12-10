@@ -6,6 +6,7 @@
 * Added auto completion options when cursor is within a `[ ]` box
   * This can be triggered normally via `Ctrl + Space`
   * Or, if you mouse click within the box, auto complete will pop up automatically, and the symbol within the box will be selected so you can easily change it
+* Added `Add Today + Standup View` command for the perfect one-click action each morning
 
 ## 0.0.3 - 2024-12-5
 

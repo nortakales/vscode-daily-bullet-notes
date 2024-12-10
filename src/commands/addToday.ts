@@ -63,13 +63,13 @@ export async function addToday() {
         editor.selection = new vscode.Selection(newCursorPosition, newCursorPosition);
         editor.revealRange(new vscode.Range(newCursorPosition, newCursorPosition), vscode.TextEditorRevealType.InCenter);
 
-        editor.edit(editBuilder => {
+        await editor.edit(editBuilder => {
             const lineToInsertOn = mostRecentDay!.range.end;
             const endOfLine = editor.document.lineAt(lineToInsertOn).range.end.character;
             editBuilder.insert(new vscode.Position(lineToInsertOn, endOfLine), "\n" + edits.join("\n") + "\n");
-        }).then(() => {
-            // TODO Only if cursor not at end of doc?
-            moveCursorUpNLines(1);
         });
+
+        // TODO Only if cursor not at end of doc?
+        moveCursorUpNLines(1);
     }
 }
