@@ -19,9 +19,13 @@
     "Other"
   ],
   "keywords": [
-    "bullet journal"
+    "bullet journal",
+    "notes",
+    "tasks",
+    "lists",
+    "todo list"
   ],
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.95.0"
   },

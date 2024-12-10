@@ -81,6 +81,14 @@ None yet, there will be some customization eventually
 
 ## Change Log
 
+### 0.0.4 - 2024-12-10
+
+* Fixed bug where folding was not provided on an untitled/yet-to-be-saved editor even if the language was set to `daily-bullet-notes`
+* Added auto completion options when cursor is within a `[ ]` box
+  * This can be triggered normally via `Ctrl + Space`
+  * Or, if you mouse click within the box, auto complete will pop up automatically, and the symbol within the box will be selected so you can easily change it
+* Added `Add Today + Standup View` command for the perfect one-click action each morning
+
 ### 0.0.3 - 2024-12-5
 
 * Fixed bug where `[x]` or `[-]` sub-tasks were not removed on next day
@@ -134,10 +142,10 @@ None yet, there will be some customization eventually
 * [ ] add [] when adding new line after a task
 * [x] bug: syntax highlight [ ]
 * [ ] preference for [] vs [ ]
-* [ ] refactor commands into separate classes
+* [x] refactor commands into separate classes
 * [ ] auto format a box if you have a space and enter an x, like [ x] or [x ]
 * [x] bug? folding is not provided on brand new unsaved file
 * [x] auto highlight contents of [ ] when clicking inside so you can easily replace via keyboard
 * [x] bring up auto complete when cursor is inside of [ ]
 * [x] ctrl + space auto complete when inside of [ ]
-* [ ] new day + standup view command
+* [x] new day + standup view command
