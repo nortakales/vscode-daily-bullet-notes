@@ -136,4 +136,8 @@ None yet, there will be some customization eventually
 * [ ] preference for [] vs [ ]
 * [ ] refactor commands into separate classes
 * [ ] auto format a box if you have a space and enter an x, like [ x] or [x ]
-* [ ] bug? folding is not provided on brand new unsaved file
+* [x] bug? folding is not provided on brand new unsaved file
+* [ ] auto highlight contents of [ ] when clicking inside so you can easily replace via keyboard
+* [ ] bring up auto complete when cursor is inside of [ ]
+* [x] ctrl + space auto complete when inside of [ ]
+* [ ] new day + standup view command

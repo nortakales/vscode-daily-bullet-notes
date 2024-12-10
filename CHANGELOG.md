@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.0.4 - TBD
+
+* Fixed bug where folding was not provided on an untitled/yet-to-be-saved editor even if the language was set to `daily-bullet-notes`
+* Added auto completion options when cursor is within a `[ ]` box (triggered via the normal Ctrl + Space method for now)
+
 ## 0.0.3 - 2024-12-5
 
 * Fixed bug where `[x]` or `[-]` sub-tasks were not removed on next day

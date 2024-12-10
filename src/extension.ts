@@ -1,24 +1,22 @@
 import * as vscode from 'vscode';
-import DBMUIElements from './uiElements';
 import Commands from './commands';
 import DBMFoldingRangeProvider from './foldingRangeProvider';
+import DBMCompletionsProvider from './completionsProvider';
 
 export function activate(context: vscode.ExtensionContext) {
 
-	const uielements = new DBMUIElements(context);
-
-	vscode.workspace.onDidChangeConfiguration(() => {
-		uielements.updateView();
-	});
-	vscode.window.onDidChangeActiveTextEditor(() => {
-		uielements.updateView();
-	});
-
 	context.subscriptions.push(
 		vscode.languages.registerFoldingRangeProvider({
-			scheme: 'file',
+			//scheme: 'file',
 			language: 'daily-bullet-notes'
 		}, new DBMFoldingRangeProvider())
+	);
+
+	context.subscriptions.push(
+		vscode.languages.registerCompletionItemProvider({
+			//scheme: 'file',
+			language: 'daily-bullet-notes'
+		}, new DBMCompletionsProvider())
 	);
 
 	new Commands(context);
