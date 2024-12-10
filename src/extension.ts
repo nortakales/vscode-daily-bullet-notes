@@ -7,6 +7,7 @@ import { addNewList } from './commands/addNewList';
 import { standupView } from './commands/standupView';
 import { newFile } from './commands/newFile';
 import { addTodayAndStandupView } from './commands/addTodayAndStandupView';
+import { onDocumentChange } from './editListener';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -24,6 +25,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.window.onDidChangeTextEditorSelection(onSelectionChange)
+	);
+
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeTextDocument(onDocumentChange)
 	);
 
 	context.subscriptions.push(

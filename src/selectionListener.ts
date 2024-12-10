@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import { parseCursorPositionForBox } from './utilities';
 
 export async function onSelectionChange(event: vscode.TextEditorSelectionChangeEvent) {
-    console.log(event);
 
     // Only run this for mouse clicks
     if (event.kind !== vscode.TextEditorSelectionChangeKind.Mouse) {

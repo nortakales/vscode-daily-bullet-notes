@@ -137,9 +137,11 @@ None yet, there will be some customization eventually
   * [ ] Include some examples
   * [x] getting started section
   * [ ] table of commands
-* [ ] ability to add recurring todos on a specific day of week or date or maybe cadance, or even just once on a specific date
+* [ ] ability to add recurring todos on a specific day of week or date or maybe cadence, or even just once on a specific date
 * [x] bug: x and - is not removed if indented, but others are cleared
-* [ ] add [] when adding new line after a task
+* [x] add [] when adding new line after a task
+  * [x] backspace should then clear entire box
+  * [x] tab should indent it
 * [x] bug: syntax highlight [ ]
 * [ ] preference for [] vs [ ]
 * [x] refactor commands into separate classes
@@ -149,3 +151,4 @@ None yet, there will be some customization eventually
 * [x] bring up auto complete when cursor is inside of [ ]
 * [x] ctrl + space auto complete when inside of [ ]
 * [x] new day + standup view command
+* [ ] enable this as a web extension

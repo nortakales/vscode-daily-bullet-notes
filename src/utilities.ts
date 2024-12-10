@@ -35,6 +35,7 @@ export function removeCompleteAndCancelledContent(content: string | undefined) {
         return undefined;
     }
     // TODO a setting to preserve un-indented notes, not just tasks
+    // TODO grab [ ] vs [] setting
 
     const lines = content.split(/\r?\n/);
     const linesToKeep = [];
@@ -43,7 +44,7 @@ export function removeCompleteAndCancelledContent(content: string | undefined) {
         let match = line.match(/^\s*(\[[^x\-]?\])/);
         if (match) {
             // clear out any progress/blocked/etc markers
-            const modifiedLine = line.replace(match[1], '[]');
+            const modifiedLine = line.replace(match[1], '[ ]');
             linesToKeep.push(modifiedLine);
             shouldKeepNextIndentedLines = true;
         } else if (line.match(/^\s/)) {

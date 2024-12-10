@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.0.5 - Unreleased
+
+* Adding a new line after an existing task will start the line with a `[ ]` box
+  * That box can then be removed entirely via `Backspace`
+  * Or indented via `Tab` and unindented via `Shift + Tab`
+
 ## 0.0.4 - 2024-12-10
 
 * Fixed bug where folding was not provided on an untitled/yet-to-be-saved editor even if the language was set to `daily-bullet-notes`
