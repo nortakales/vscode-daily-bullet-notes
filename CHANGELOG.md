@@ -3,7 +3,9 @@
 ## 0.0.4 - TBD
 
 * Fixed bug where folding was not provided on an untitled/yet-to-be-saved editor even if the language was set to `daily-bullet-notes`
-* Added auto completion options when cursor is within a `[ ]` box (triggered via the normal Ctrl + Space method for now)
+* Added auto completion options when cursor is within a `[ ]` box
+  * This can be triggered normally via `Ctrl + Space`
+  * Or, if you mouse click within the box, auto complete will pop up automatically, and the symbol within the box will be selected so you can easily change it
 
 ## 0.0.3 - 2024-12-5
 

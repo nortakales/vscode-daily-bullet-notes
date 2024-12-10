@@ -1,28 +1,37 @@
 import * as vscode from 'vscode';
-import Commands from './commands';
 import DBMFoldingRangeProvider from './foldingRangeProvider';
 import DBMCompletionsProvider from './completionsProvider';
+import { onSelectionChange } from './selectionListener';
+import { addToday } from './commands/addToday';
+import { addNewList } from './commands/addNewList';
+import { standupView } from './commands/standupView';
+import { newFile } from './commands/newFile';
 
 export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.languages.registerFoldingRangeProvider({
-			//scheme: 'file',
 			language: 'daily-bullet-notes'
 		}, new DBMFoldingRangeProvider())
 	);
 
 	context.subscriptions.push(
 		vscode.languages.registerCompletionItemProvider({
-			//scheme: 'file',
 			language: 'daily-bullet-notes'
 		}, new DBMCompletionsProvider())
 	);
 
-	new Commands(context);
+	context.subscriptions.push(
+		vscode.window.onDidChangeTextEditorSelection(onSelectionChange)
+	);
 
-	console.log('daily-bullet-notes is now active');
+	context.subscriptions.push(
+		vscode.commands.registerCommand("daily-bullet-notes.addToday", addToday),
+		vscode.commands.registerCommand("daily-bullet-notes.addNewList", addNewList),
+		vscode.commands.registerCommand("daily-bullet-notes.standupView", standupView),
+		vscode.commands.registerCommand("daily-bullet-notes.newFile", newFile),
+	);
 }
 
-// This method is called when your extension is deactivated
+// This method is called when the extension is deactivated
 export function deactivate() { }
