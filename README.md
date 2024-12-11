@@ -81,6 +81,15 @@ None yet, there will be some customization eventually
 
 ## Change Log
 
+### 0.0.5 - 2024-12-11
+
+* Adding a new line after an existing task will start the line with a `[ ]` box
+  * That box can then be removed entirely via `Backspace`
+  * Or indented via `Tab` and unindented via `Shift + Tab`
+* Modifying the status of a `[ ]` box which is a subtask will re-calculate the parent task's status
+  * For example, if all sub-tasks are complete, the parent task will also be marked complete
+  * This feature still needs work - it does not recurse up to parent-parent tasks, and does not recalculate task status when adding or removing tasks yet
+
 ### 0.0.4 - 2024-12-10
 
 * Fixed bug where folding was not provided on an untitled/yet-to-be-saved editor even if the language was set to `daily-bullet-notes`

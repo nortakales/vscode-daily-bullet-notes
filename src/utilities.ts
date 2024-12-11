@@ -30,6 +30,35 @@ export function getMostRecentDayContent(dbmDoc: DailyBulletNotesDocument): strin
     return mostRecentDayContent;
 }
 
+export function getDayFromLineNumber(line: number, dbmDoc: DailyBulletNotesDocument) {
+
+    // TODO binary search would be faster if I put all days into an array (which would be sorted),
+    // but only if users are frequently editing older days. Since users would mostly be editing
+    // today, or perhaps yesterday, iterating through the days in reverse order is going to be
+    // the most efficient approach in the vast majority of cases. And ideal solution might resort
+    // to binary search if today or yesterday did not match first.
+
+    let day = dbmDoc.dailyLog.mostRecentDay;
+
+    if (!day) {
+        return undefined;
+    }
+
+    while (line < day.range.start) {
+        day = day?.previousDailySection;
+        if (!day) {
+            return undefined;
+        }
+    }
+
+    // The line is definitely within the day we found
+    if (day.range.start <= line && day.range.end >= line) {
+        return day;
+    }
+
+    return undefined;
+}
+
 export function removeCompleteAndCancelledContent(content: string | undefined) {
     if (!content) {
         return undefined;
