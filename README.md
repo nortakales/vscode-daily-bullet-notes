@@ -76,10 +76,15 @@ None yet, there will be some customization eventually
 
 ## Known Issues
 
-* Many edge cases are not handled if your file is not formatted well. If you let the extension handle formatting (other than adding new tasks/notes in a day), you'll be fine.
+* Many edge cases are not handled if your file is not formatted well. If you let the extension handle adding new days, you'll be fine.
 * Days in the future are NOT handled yet. If you add today, it will always assume today should be at the very bottom.
 
 ## Change Log
+
+### 0.0.6 - 2024-12-12
+
+* Fixed bug when starting a new line in CRLF mode would not add a `[ ]` box
+* Complete rewrite of code that updates a parent task's status. Now the entire day you have just modified will have all statuses updated as appropriate based on child tasks. This still needs some work though, or at the very least some setting(s) to control or turn off the behavior if it is not desired.
 
 ### 0.0.5 - 2024-12-11
 
@@ -161,3 +166,5 @@ None yet, there will be some customization eventually
 * [x] ctrl + space auto complete when inside of [ ]
 * [x] new day + standup view command
 * [ ] enable this as a web extension
+* [ ] click to change a task into a note (with a bullet) or vice versa
+* [ ] settings to control updating parent task status

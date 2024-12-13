@@ -122,3 +122,53 @@ export function parseCursorPositionForBox(position: vscode.Position, document: v
             new vscode.Position(line, innerSectionStartCharacter + 1 + innerSectionLength)),
     };
 }
+
+export function computeCombinedStatus(statuses: string[]) {
+    if (!statuses || statuses.length === 0) {
+        return ' ';
+    }
+    if (statuses.length === 1) {
+        return statuses[0];
+    }
+
+    const uniqueStatuses = new Set(statuses);
+
+    uniqueStatuses.delete('-');
+
+    if (uniqueStatuses.size === 1) {
+        return [...uniqueStatuses][0];
+    }
+
+    uniqueStatuses.delete('x');
+
+    if (uniqueStatuses.size === 1) {
+        return [...uniqueStatuses][0];
+    }
+
+    uniqueStatuses.delete('/');
+
+    if (uniqueStatuses.size === 1) {
+        return [...uniqueStatuses][0];
+    }
+
+    // remove statuses in reverse priority order until we reach just 1
+    uniqueStatuses.delete('');
+    uniqueStatuses.delete(' ');
+
+    if (uniqueStatuses.size === 1) {
+        return [...uniqueStatuses][0];
+    }
+
+    // There should only be + at this point
+    // TODO what if there is other stuff in here?
+    return '+';
+}
+
+export function getIndentLevel(line: string) {
+    // Note: Behavior with a mix of tabs/spaces is going to be wrong
+    const match = line.match(/^\s+/);
+    if (!match) {
+        return 0;
+    }
+    return match[0].split('').length;
+}

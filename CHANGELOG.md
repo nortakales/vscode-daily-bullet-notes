@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.0.6 - 2024-12-12
+
+* Fixed bug when starting a new line in CRLF mode would not add a `[ ]` box
+* Complete rewrite of code that updates a parent task's status. Now the entire day you have just modified will have all statuses updated as appropriate based on child tasks. This still needs some work though, or at the very least some setting(s) to control or turn off the behavior if it is not desired.
+
 ## 0.0.5 - 2024-12-11
 
 * Adding a new line after an existing task will start the line with a `[ ]` box
