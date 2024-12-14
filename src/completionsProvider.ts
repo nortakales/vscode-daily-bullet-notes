@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { parseCursorPositionForBox } from './utilities';
 
 class DBMCompletionsProvider implements vscode.CompletionItemProvider {
 
@@ -55,28 +56,17 @@ class DBMCompletionsProvider implements vscode.CompletionItemProvider {
 
     provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
 
-
-        //   [ ]
-        const minRange = Math.max(0, position.character - 2);
-        const maxRange = position.character + 2;
-        const characters = document.lineAt(position).text.slice(minRange, maxRange);
-        if (!characters.match(/\[.?\]/)) {
+        const parsedBox = parseCursorPositionForBox(position, document);
+        if (!parsedBox) {
             return undefined;
         }
 
-        const prefix = document.lineAt(position).text.slice(position.character - 1, position.character);
-        // If we are the start of the box or not
-        const replaceStartCharacter = prefix === "[" ? position.character : position.character - 1;
-        // If there is something in the box or not
-        const replaceLength = characters.match(/\[.\]/) ? 1 : 0;
-        const replaceRange = new vscode.Range(
-            new vscode.Position(position.line, replaceStartCharacter),
-            new vscode.Position(position.line, replaceStartCharacter + replaceLength)
-        );
+        // TODO if we want to support changing tasks to notes and vice versa, insert text needs to be dynamic
+        // and range needs to be appropriately modified
 
         return this.completionItems.map(item => {
             const completion = new vscode.CompletionItem(item.completionLabel, vscode.CompletionItemKind.Enum);
-            completion.range = replaceRange;
+            completion.range = parsedBox.innerBoxRange;
             completion.insertText = item.insertText;
             completion.filterText = item.filterText;
             completion.sortText = item.sortText;

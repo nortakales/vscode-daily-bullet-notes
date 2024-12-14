@@ -168,3 +168,4 @@ None yet, there will be some customization eventually
 * [ ] enable this as a web extension
 * [ ] click to change a task into a note (with a bullet) or vice versa
 * [ ] settings to control updating parent task status
+* [ ] when adding a newline, bring up the auto-complete for task status with open and bullet note at the top
