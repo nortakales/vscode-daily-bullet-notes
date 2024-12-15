@@ -59,6 +59,17 @@
         "icon": "$(new-file)"
       }
     ],
+    "configuration": {
+      "title": "Daily Bullet Notes",
+      "properties": {
+        "daily-bullet-notes.automaticStatusUpdates": {
+          "title": "Automatic Status Updates",
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Update all task statuses automatically based on sub-tasks. *Note: this will happen only within the particular day you are editing, not the entire document.*"
+        }
+      }
+    },
     "languages": [
       {
         "id": "daily-bullet-notes",

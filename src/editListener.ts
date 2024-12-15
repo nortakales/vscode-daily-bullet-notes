@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as settings from './settings';
 import { computeCombinedStatus, getDayFromLineNumber, getIndentLevel, parseCursorPositionForBox } from './utilities';
 import Parser from './documentParser';
 import { DailyBulletNotesDocument } from './documentModel';
@@ -60,6 +61,10 @@ export async function onDocumentChange(event: vscode.TextDocumentChangeEvent) {
 }
 
 async function updateStatusesForFullDay(event: vscode.TextDocumentChangeEvent, dbmDoc?: DailyBulletNotesDocument) {
+
+    if (!settings.automaticStatusUpdates()) {
+        return;
+    }
     if (!fullUpdates) {
         return;
     }
@@ -252,6 +257,9 @@ async function processTab(event: vscode.TextDocumentChangeEvent) {
 }
 
 async function processUpdatedBox(event: vscode.TextDocumentChangeEvent) {
+    if (!settings.automaticStatusUpdates()) {
+        return;
+    }
     if (fullUpdates) {
         return;
     }

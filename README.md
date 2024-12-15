@@ -63,64 +63,35 @@ The main benefits of this method to me are:
 ## Extension Features
 
 1. **Syntax highlighting** - year/month/day headers, list headers and task boxes are all colored
-2. **Folding** - fold years/months/days and lists
-3. **Commands** - a bunch of built in commands to help manage your tasks
+2. **Folding (collapsing)** - fold years/months/days and lists
+3. **Commands** - a bunch of built in commands to help manage your tasks/notes
 
 ## Commands
 
-Table of commands coming soon...
+| Title                    | Command                                     | Description                                                                                                                                                                                              |
+| ------------------------ | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Add Today + Standup View | `daily-bullet-notes.addTodayAndStandupView` | I start every day with this command. As the name suggests, it is simply a combination of `Add Today` and `Standup View`. Read those descriptions for more info.                                          |
+| Add Today                | `daily-bullet-notes.addToday`               | Copies the previous day to a new day with today's date, preserving all tasks that are not complete `[x]` or removed `[-]` and any sub-tasks/notes for those tasks. Top level notes are not carried over. |
+| Standup View             | `daily-bullet-notes.standupView`            | Collapses the entire document except for the two most recent days (usually this would be today and yesterday).                                                                                           |
+| Add New List             | `daily-bullet-notes.addNewList`             | Shortcut for adding a new list at the bottom of your document with a nicely formatted header box.                                                                                                        |
+| New DBM File             | `daily-bullet-notes.newFile`                | A quick way for new users to get started with a template.                                                                                                                                                |
 
-## Extension Settings
+## Settings
 
-None yet, there will be some customization eventually
+| Setting                  | Key                                         | Default | Description                                                                                                                                                  |
+| ------------------------ | ------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Automatic Status Updates | `daily-bullet-notes.automaticStatusUpdates` | `true`  | Update all task statuses automatically based on sub-tasks. *Note: this will happen only within the particular day you are editing, not the entire document.* |
+
+## Release Notes
+
+See [Change Log](./CHANGELOG.md)
 
 ## Known Issues
 
 * Many edge cases are not handled if your file is not formatted well. If you let the extension handle adding new days, you'll be fine.
 * Days in the future are NOT handled yet. If you add today, it will always assume today should be at the very bottom.
 
-## Change Log
-
-### 0.0.6 - 2024-12-12
-
-* Fixed bug when starting a new line in CRLF mode would not add a `[ ]` box
-* Complete rewrite of code that updates a parent task's status. Now the entire day you have just modified will have all statuses updated as appropriate based on child tasks. This still needs some work though, or at the very least some setting(s) to control or turn off the behavior if it is not desired.
-
-### 0.0.5 - 2024-12-11
-
-* Adding a new line after an existing task will start the line with a `[ ]` box
-  * That box can then be removed entirely via `Backspace`
-  * Or indented via `Tab` and unindented via `Shift + Tab`
-* Modifying the status of a `[ ]` box which is a subtask will re-calculate the parent task's status
-  * For example, if all sub-tasks are complete, the parent task will also be marked complete
-  * This feature still needs work - it does not recurse up to parent-parent tasks, and does not recalculate task status when adding or removing tasks yet
-
-### 0.0.4 - 2024-12-10
-
-* Fixed bug where folding was not provided on an untitled/yet-to-be-saved editor even if the language was set to `daily-bullet-notes`
-* Added auto completion options when cursor is within a `[ ]` box
-  * This can be triggered normally via `Ctrl + Space`
-  * Or, if you mouse click within the box, auto complete will pop up automatically, and the symbol within the box will be selected so you can easily change it
-* Added `Add Today + Standup View` command for the perfect one-click action each morning
-
-### 0.0.3 - 2024-12-5
-
-* Fixed bug where `[x]` or `[-]` sub-tasks were not removed on next day
-* `[ ]` is now highlighted just like `[]`
-* Added [New DBM File](command:daily-bullet-notes.newFile) command which will create a new file with a template to get new users started
-* Readme updates to get new users started
-* Added a separate CHANGELOG.md for VSCode
-
-### 0.0.2 - 2024-12-3
-
-* Updated readme with extension overview
-* Progress/blocked/etc markers are removed from task boxes when copied to today so your new day starts with a clean slate
-
-### 0.0.1 - 2024-12-1
-
-* Initial version - not yet complete, many bugs
-
-# Upcoming Features (aka Todo List)
+## Upcoming Features (aka Todo List)
 
 * [ ] goto today command (standup view is basically the same, and complete)
 * [ ] archive previous year command
@@ -146,11 +117,11 @@ None yet, there will be some customization eventually
     * add next day after last day
     * add sick/vacation day
 * [ ] support days in the future
-* [ ] update main task box based on sub-task status
+* [x] update main task box based on sub-task status (sort of complete, may be bugs or behavior tweaks needed)
 * [ ] Readme updates
-  * [ ] Include some examples
+  * [ ] Include more examples
   * [x] getting started section
-  * [ ] table of commands
+  * [x] settings/commands tables
 * [ ] ability to add recurring todos on a specific day of week or date or maybe cadence, or even just once on a specific date
 * [x] bug: x and - is not removed if indented, but others are cleared
 * [x] add [] when adding new line after a task
@@ -167,5 +138,5 @@ None yet, there will be some customization eventually
 * [x] new day + standup view command
 * [ ] enable this as a web extension
 * [ ] click to change a task into a note (with a bullet) or vice versa
-* [ ] settings to control updating parent task status
+* [x] settings to control updating parent task status
 * [ ] when adding a newline, bring up the auto-complete for task status with open and bullet note at the top
