@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.0 - 2024-12-14
+
+* First minor version, ready for prime time!
+* Added a setting to control whether or not parent tasks should have their status updated automatically
+* Maybe enabled this as a web extension?
+
 ## 0.0.6 - 2024-12-12
 
 * Fixed bug when starting a new line in CRLF mode would not add a `[ ]` box
