@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.2 - 2025-02-21
+
+* Fixed bug when pressing enter in the middle of a task title added a box after the text on the new line instead of before it
+* Fixed bug where subtasks like `[ ]` and `[]` caused parent task to be `[x]`
+* Changed behavior such that if a sub-task was completed `[x]`, but some other sub-tasks are not yet completed, parent task is marked as progress `[+]`
+
 ## 0.1.0 - 2024-12-14
 
 * First minor version, ready for prime time!
