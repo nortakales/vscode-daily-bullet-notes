@@ -132,6 +132,17 @@ export function computeCombinedStatus(statuses: string[]) {
     }
 
     const uniqueStatuses = new Set(statuses);
+    const finishedAtLeastOneTask = uniqueStatuses.has('x');
+    if (uniqueStatuses.has(' ') && uniqueStatuses.has('')) {
+        // TODO grab [ ] vs [] setting to decide which to remove
+        uniqueStatuses.delete('');
+    }
+
+    // remove statuses in reverse priority order until we reach just 1
+
+    if (uniqueStatuses.size === 1) {
+        return [...uniqueStatuses][0];
+    }
 
     uniqueStatuses.delete('-');
 
@@ -148,13 +159,15 @@ export function computeCombinedStatus(statuses: string[]) {
     uniqueStatuses.delete('/');
 
     if (uniqueStatuses.size === 1) {
-        return [...uniqueStatuses][0];
+        if (finishedAtLeastOneTask) {
+            return '+';
+        } else {
+            return [...uniqueStatuses][0];
+        }
     }
 
-    // remove statuses in reverse priority order until we reach just 1
     uniqueStatuses.delete('');
     uniqueStatuses.delete(' ');
-
     if (uniqueStatuses.size === 1) {
         return [...uniqueStatuses][0];
     }

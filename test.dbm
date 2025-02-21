@@ -73,7 +73,26 @@ note1
 [-] remove task
 [/] blocked task
 [+] progress task
+[+] progress
+    [+] 
+    [ ] 
+    [x]
+    [/] 
+    [-] 
+[ ] progress
+    [ ] 
+    [ ] 
+    [x]
+    [/] 
+    [-] 
+[/] blocked
+    [/] 
+    [x] 
+[ ] 
+    [ ] 
+    [ ] 
 last notes
+
 +----------------------------------------+
 |                 List1                  |
 +----------------------------------------+
