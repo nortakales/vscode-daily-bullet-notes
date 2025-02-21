@@ -207,9 +207,19 @@ async function processNewLine(event: vscode.TextDocumentChangeEvent) {
     // If previous line was a task
     if (previousLineText.match(/^\s*\[.?\]/)) {
 
-        // TODO might be making a bad assumption on the editor being the active one?
-        await vscode.window.activeTextEditor?.edit(editBuilder => {
-            editBuilder.insert(document.lineAt(line + 1).range.end, "[ ] ");
+        if (vscode.window.activeTextEditor?.document !== document) {
+            return;
+        }
+        const editor = vscode.window.activeTextEditor;
+
+        await editor.edit(editBuilder => {
+
+            // Cursor position moves after this, so cannot use cursor position
+            // Parse new line to add box after any indenting but before any text
+            const lineText = document.lineAt(line + 1).text;
+            // Strip of non-whitespace, use the length as the position
+            const startingWhitespace = lineText.replace(/[^\s].*/, '');
+            editBuilder.insert(new vscode.Position(line + 1, startingWhitespace.length), "[ ] ");
         });
 
         await updateStatusesForFullDay(event);
