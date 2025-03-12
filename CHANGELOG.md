@@ -1,5 +1,10 @@
 # Change Log
 
+
+## 0.1.3 - 2025-02-21
+
+* Fixed bug where parent task was not always updating to progress `[+]`
+
 ## 0.1.2 - 2025-02-21
 
 * Fixed bug when pressing enter in the middle of a task title added a box after the text on the new line instead of before it

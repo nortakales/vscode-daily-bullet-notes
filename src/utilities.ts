@@ -153,7 +153,11 @@ export function computeCombinedStatus(statuses: string[]) {
     uniqueStatuses.delete('x');
 
     if (uniqueStatuses.size === 1) {
-        return [...uniqueStatuses][0];
+        if (finishedAtLeastOneTask) {
+            return '+';
+        } else {
+            return [...uniqueStatuses][0];
+        }
     }
 
     uniqueStatuses.delete('/');

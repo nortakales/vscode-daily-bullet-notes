@@ -79,18 +79,27 @@ note1
     [x]
     [/] 
     [-] 
-[ ] progress
+[+] progress
     [ ] 
     [ ] 
     [x]
     [/] 
     [-] 
-[/] blocked
+[/] progress
     [/] 
     [x] 
-[ ] 
+[+] progress
+    [x] test2
     [ ] 
+    [/] 
+    [-] test3
+[ ] progress
+    [x] 
     [ ] 
+    [-] 
+[x] done
+    [x] 
+    [-] 
 last notes
 
 +----------------------------------------+
