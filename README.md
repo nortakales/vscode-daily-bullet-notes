@@ -22,6 +22,7 @@ and this is today
 [-] this task is either no longer relevant or tracked by someone else now
 [+] you made some progress on this task today, but it isn't done yet
 [ ] this task is ready and waiting to be worked on
+[>] this task was added today, but you plan to work on it tomorrow
 Here is a quick note you took about the day, like you took the afternoon off or attended an event
 
 +----------------------------------------+
@@ -42,6 +43,7 @@ Here is how my method works:
    3. `[+]` - I worked on it, but it is not done yet
    4. `[/]` - task is blocked, I cannot make progress
    5. `[-]` - task is no longer needed, or I'm no longer tracking it
+   6. `[>]` - task was added today, but no plan to work on it until tomorrow
 3. For each task I may have some notes or sub-tasks indented on the next lines. Sub-tasks may also have their own status box.
 4. As I work on tasks throughout the day, I update their status. If I work on something unplanned, I add it to my list with the appropriate status.
 5. At the start of each day, I copy the previous day's list. I remove tasks that are done `[x]` or no longer needed `[-]`, and keep all other tasks. All these tasks will start with an empty `[ ]`, and I will immediately update their status as needed (e.g. if I already know something is blocked for the day).

@@ -144,6 +144,12 @@ export function computeCombinedStatus(statuses: string[]) {
         return [...uniqueStatuses][0];
     }
 
+    uniqueStatuses.delete('>');
+
+    if (uniqueStatuses.size === 1) {
+        return [...uniqueStatuses][0];
+    }
+
     uniqueStatuses.delete('-');
 
     if (uniqueStatuses.size === 1) {

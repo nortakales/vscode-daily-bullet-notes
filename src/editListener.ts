@@ -50,7 +50,7 @@ export async function onDocumentChange(event: vscode.TextDocumentChangeEvent) {
         // TODO will not work if someone's indent level is just 1 space
         console.log("tab");
         await processTab(event);
-    } else if (text.length === 1 && text.match(/[ x+/-]/)) {
+    } else if (text.length === 1 && text.match(/[ x+/->]/)) {
         const parsedBox = parseCursorPositionForBox(change.range.start, event.document);
         if (parsedBox) {
             console.log("[" + parsedBox.innerPart + "]");

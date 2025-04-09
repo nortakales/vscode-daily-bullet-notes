@@ -9,7 +9,7 @@ class DBMCompletionsProvider implements vscode.CompletionItemProvider {
     private completionItems = [
         {
             insertText: '+',
-            filterText: 'x-/+ ',
+            filterText: 'x-/+> ',
             sortText: '1',
             completionLabel: {
                 label: '+',
@@ -18,7 +18,7 @@ class DBMCompletionsProvider implements vscode.CompletionItemProvider {
         },
         {
             insertText: 'x',
-            filterText: 'x-/+ ',
+            filterText: 'x-/+> ',
             sortText: '2',
             completionLabel: {
                 label: 'x',
@@ -27,7 +27,7 @@ class DBMCompletionsProvider implements vscode.CompletionItemProvider {
         },
         {
             insertText: '/',
-            filterText: 'x-/+ ',
+            filterText: 'x-/+> ',
             sortText: '3',
             completionLabel: {
                 label: '/',
@@ -36,7 +36,7 @@ class DBMCompletionsProvider implements vscode.CompletionItemProvider {
         },
         {
             insertText: '-',
-            filterText: 'x-/+ ',
+            filterText: 'x-/+> ',
             sortText: '4',
             completionLabel: {
                 label: '-',
@@ -44,9 +44,18 @@ class DBMCompletionsProvider implements vscode.CompletionItemProvider {
             }
         },
         {
-            insertText: ' ',
-            filterText: 'x-/+ ',
+            insertText: '>',
+            filterText: 'x-/+> ',
             sortText: '5',
+            completionLabel: {
+                label: '>',
+                detail: ' Tomorrow'
+            }
+        },
+        {
+            insertText: ' ',
+            filterText: 'x-/+> ',
+            sortText: '6',
             completionLabel: {
                 label: ' ',
                 detail: ' Open'

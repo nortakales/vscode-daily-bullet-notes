@@ -1,6 +1,11 @@
 # Change Log
 
 
+## 0.1.4 - 2025-04-09
+
+* Added support for `[>]` which is a task you added but had no plan to work on until the next day
+* Adjusted some textmate scopes to adjust some colors
+
 ## 0.1.3 - 2025-02-21
 
 * Fixed bug where parent task was not always updating to progress `[+]`

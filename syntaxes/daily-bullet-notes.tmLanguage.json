@@ -35,13 +35,18 @@
 		},
 		{
 			"comment": "Cancelled Checkbox",
-			"name": "string",
+			"name": "entity.name.class",
 			"match": "\\[\\-\\]"
 		},
 		{
 			"comment": "Blocked Checkbox",
-			"name": "constant.numeric",
+			"name": "string",
 			"match": "\\[/\\]"
+		},
+		{
+			"comment": "Scheduled Checkbox",
+			"name": "constant.numeric",
+			"match": "\\[>\\]"
 		}
 	]
 }
