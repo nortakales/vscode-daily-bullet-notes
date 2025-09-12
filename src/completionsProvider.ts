@@ -84,7 +84,8 @@ class DBMCompletionsProvider implements vscode.CompletionItemProvider {
     }
 
     resolveCompletionItem?(item: vscode.CompletionItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem> {
-        throw new Error('Method not implemented.');
+        // No need to add any additional information
+        return item;
     }
 }
 

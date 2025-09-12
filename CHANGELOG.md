@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.1.5 - 2025-09-11
+
+* No functionality changes, just some maintenance
+  * Removed error from resolveCompletionItem which should clean up extension host logs
+  * Updated dependencies
+  * Removed quickstart readme
+  * Set watch task to run on folder open
 
 ## 0.1.4 - 2025-04-09
 
