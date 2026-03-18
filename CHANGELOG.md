@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.0 - 2026-03-17
+
+* Under the hood performance improvements
+
 ## 0.1.5 - 2025-09-11
 
 * No functionality changes, just some maintenance
