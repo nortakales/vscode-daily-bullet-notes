@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { DailyBulletNotesDocument, DailyLog, DailySection, ListSection, MonthSection, YearSection } from './documentModel';
 import { getMonthFromString } from './strings';
 
+const parseCache = new Map<string, { version: number; result: DailyBulletNotesDocument }>();
+
 class Parser {
 
     private startOrEndOfBoxRegex = /^\+\-{20,100}\+/;
@@ -19,6 +21,12 @@ class Parser {
     }
 
     public parseDocument(): DailyBulletNotesDocument {
+
+        const cacheKey = this.document.uri.toString();
+        const cached = parseCache.get(cacheKey);
+        if (cached && cached.version === this.document.version) {
+            return cached.result;
+        }
 
         let currentDailyHeaderIndex: number | null = null;
 
@@ -268,10 +276,12 @@ class Parser {
         }
 
 
-        return {
+        const result: DailyBulletNotesDocument = {
             dailyLog: dailyLog!,
             listSections: listSections
         };
+        parseCache.set(cacheKey, { version: this.document.version, result });
+        return result;
     }
 }
 
