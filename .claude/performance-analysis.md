@@ -12,14 +12,14 @@ The extension has several significant performance issues that will manifest as k
 
 ## Critical Issues
 
-### 1. Full Document Parse on Every Keystroke
+### 1. ~~Full Document Parse on Every Keystroke~~ ✅ DONE
 **Files:** `src/editListener.ts:79`, `src/foldingRangeProvider.ts:8`
 
 `new Parser(document).parseDocument()` is called synchronously on every matching text change. `updateStatusesForFullDay()` is called up to **4 times within a single edit event** (lines 38, 45, 52, 58). The folding range provider also parses the entire document on every folding request with zero caching.
 
-**Fix:** Cache the last parse result keyed by document version. Invalidate only when the document version changes.
+**Fix:** Added module-level `parseCache` Map in `documentParser.ts` keyed by document URI, storing `{version, result}`. Returns cached result immediately when `document.version` matches.
 
-### 2. Cascading and Duplicate Status Updates
+### 2. ~~Cascading and Duplicate Status Updates~~ ✅ DONE
 **File:** `src/editListener.ts:200–249`
 
 `updateStatusesForFullDay()` is called redundantly in multiple branches:
@@ -29,18 +29,18 @@ The extension has several significant performance issues that will manifest as k
 
 Each call re-parses the entire current day section.
 
-**Fix:** Deduplicate with a flag or by coalescing to a single deferred call per event.
+**Fix:** `processNewLine` and `processBackspace` now return `Promise<boolean>` and no longer call `updateStatusesForFullDay` internally. `onDocumentChange` calls it exactly once based on the return value. `processBackspace` consolidated its two calls into a single `needsUpdate` flag.
 
 ---
 
 ## High Priority Issues
 
-### 3. Unthrottled Event Listeners
+### 3. ~~Unthrottled Event Listeners~~ ✅ DONE
 **File:** `src/extension.ts:27,31`
 
 Both `onDidChangeTextEditorSelection` and `onDidChangeTextDocument` are registered without any debouncing or throttling. On every keystroke or cursor move, expensive logic runs synchronously.
 
-**Fix:** Debounce document change handler at 200–300ms; debounce selection change handler at 100ms.
+**Fix:** Added `scheduleStatusUpdate()` with a 200ms debounce timer in `editListener.ts`. The immediate edits (`[ ]` insertion, `[ ]` removal) remain synchronous; only the expensive `updateStatusesForFullDay` call is deferred. `onSelectionChange` was left unthrottled as it is already filtered to single-cursor mouse clicks inside boxes, and debouncing would add perceptible lag to the selection adjustment and suggest popup.
 
 ### 4. Completion Triggered on Every Mouse Click
 **File:** `src/selectionListener.ts:36`
@@ -132,9 +132,9 @@ match[0].length
 
 | # | Fix | Effort | Impact |
 |---|-----|--------|--------|
-| 1 | Cache Parser results keyed by document version | Medium | Critical |
-| 2 | Deduplicate `updateStatusesForFullDay()` calls per event | Low | Critical |
-| 3 | Debounce document + selection change listeners | Low | High |
+| 1 | ~~Cache Parser results keyed by document version~~ ✅ | Medium | Critical |
+| 2 | ~~Deduplicate `updateStatusesForFullDay()` calls per event~~ ✅ | Low | Critical |
+| 3 | ~~Debounce document + selection change listeners~~ ✅ | Low | High |
 | 4 | Only trigger completions when entering a new box context | Low | High |
 | 5 | Cache workspace configuration, invalidate on change | Low | High |
 | 6 | Static regex patterns on Parser class | Low | Medium |
