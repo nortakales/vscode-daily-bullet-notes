@@ -7,6 +7,16 @@ import { DailyBulletNotesDocument } from './documentModel';
 // TODO finalize a solution, and perhaps provide a setting to control it
 const fullUpdates = true;
 
+let statusUpdateTimer: ReturnType<typeof setTimeout> | undefined;
+
+function scheduleStatusUpdate(event: vscode.TextDocumentChangeEvent): void {
+    clearTimeout(statusUpdateTimer);
+    statusUpdateTimer = setTimeout(() => {
+        statusUpdateTimer = undefined;
+        updateStatusesForFullDay(event).catch(console.error);
+    }, 200);
+}
+
 export async function onDocumentChange(event: vscode.TextDocumentChangeEvent) {
 
     //console.log(event);
@@ -35,7 +45,7 @@ export async function onDocumentChange(event: vscode.TextDocumentChangeEvent) {
         const indentLevel = getIndentLevel(lineText);
         if (change.range.start.character <= indentLevel && text !== '[ ] ' && text !== lineText) {
             console.log("indent level");
-            await updateStatusesForFullDay(event);
+            scheduleStatusUpdate(event);
             return;
         }
     }
@@ -43,12 +53,12 @@ export async function onDocumentChange(event: vscode.TextDocumentChangeEvent) {
     if (text.match(/^\r?\n\s*$/)) {
         console.log("newline");
         if (await processNewLine(event)) {
-            await updateStatusesForFullDay(event);
+            scheduleStatusUpdate(event);
         }
     } else if (text.length === 0) {
         console.log("backspace");
         if (await processBackspace(event)) {
-            await updateStatusesForFullDay(event);
+            scheduleStatusUpdate(event);
         }
     } else if (text.match(/\t|\s{2,}/)) {
         // TODO will not work if someone's indent level is just 1 space
@@ -59,7 +69,7 @@ export async function onDocumentChange(event: vscode.TextDocumentChangeEvent) {
         if (parsedBox) {
             console.log("[" + parsedBox.innerPart + "]");
             await processUpdatedBox(event);
-            await updateStatusesForFullDay(event);
+            scheduleStatusUpdate(event);
         }
     }
 }
