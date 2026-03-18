@@ -42,10 +42,14 @@ export async function onDocumentChange(event: vscode.TextDocumentChangeEvent) {
 
     if (text.match(/^\r?\n\s*$/)) {
         console.log("newline");
-        await processNewLine(event);
+        if (await processNewLine(event)) {
+            await updateStatusesForFullDay(event);
+        }
     } else if (text.length === 0) {
         console.log("backspace");
-        await processBackspace(event);
+        if (await processBackspace(event)) {
+            await updateStatusesForFullDay(event);
+        }
     } else if (text.match(/\t|\s{2,}/)) {
         // TODO will not work if someone's indent level is just 1 space
         console.log("tab");
@@ -197,7 +201,7 @@ interface Task {
 
 
 
-async function processNewLine(event: vscode.TextDocumentChangeEvent) {
+async function processNewLine(event: vscode.TextDocumentChangeEvent): Promise<boolean> {
     const document = event.document;
     const line = event.contentChanges[0].range.start.line;
 
@@ -208,7 +212,7 @@ async function processNewLine(event: vscode.TextDocumentChangeEvent) {
     if (previousLineText.match(/^\s*\[.?\]/)) {
 
         if (vscode.window.activeTextEditor?.document !== document) {
-            return;
+            return false;
         }
         const editor = vscode.window.activeTextEditor;
 
@@ -222,30 +226,34 @@ async function processNewLine(event: vscode.TextDocumentChangeEvent) {
             editBuilder.insert(new vscode.Position(line + 1, startingWhitespace.length), "[ ] ");
         });
 
-        await updateStatusesForFullDay(event);
+        return true;
     }
+    return false;
 }
 
-async function processBackspace(event: vscode.TextDocumentChangeEvent) {
+async function processBackspace(event: vscode.TextDocumentChangeEvent): Promise<boolean> {
     const document = event.document;
     const change = event.contentChanges[0];
     const line = change.range.start.line;
     const lineText = document.lineAt(line).text;
+
+    let needsUpdate = false;
 
     if (lineText.match(/^\s*\[ \]$/)) {
         // TODO might be making a bad assumption on the editor being the active one?
         await vscode.window.activeTextEditor?.edit(editBuilder => {
             editBuilder.replace(document.lineAt(line).range, lineText.replace('[ ]', ''));
         });
-
-        await updateStatusesForFullDay(event);
+        needsUpdate = true;
     }
 
     const parsedBox = parseCursorPositionForBox(change.range.start, event.document);
     if (parsedBox) {
         await processUpdatedBox(event);
-        await updateStatusesForFullDay(event);
+        needsUpdate = true;
     }
+
+    return needsUpdate;
 }
 
 async function processTab(event: vscode.TextDocumentChangeEvent) {
