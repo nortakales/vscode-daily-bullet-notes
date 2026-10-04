@@ -1,10 +1,14 @@
 import * as vscode from 'vscode';
 import Parser from '../documentParser';
 import { getBoxHeader, getDailyHeader, getStringFromMonth } from '../strings';
-import { DailyBulletNotesDocument } from '../documentModel';
-import { getMostRecentDayContent, moveCursorUpNLines, removeCompleteAndCancelledContent } from '../utilities';
+import { getMostRecentDayContent, getTabSize, moveCursorUpNLines } from '../utilities';
+import { carryOverDayContent } from '../taskLogic';
+import { getMostRecentDayOrShowError } from '../dailyLogCheck';
 
-export async function addToday() {
+/**
+ * @returns false if today could not be added or found
+ */
+export async function addToday(): Promise<boolean> {
 
     // This logic always adds new years/months as the very last sections,
     // so if there are future years/months then "today" will not be in the
@@ -13,7 +17,7 @@ export async function addToday() {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         console.log("Could not detect editor");
-        return;
+        return false;
     }
     const parser = new Parser(editor.document);
     const doc = parser.parseDocument();
@@ -26,10 +30,9 @@ export async function addToday() {
 
     let edits = [];
 
-    const mostRecentDay = doc.dailyLog.mostRecentDay;
+    const mostRecentDay = getMostRecentDayOrShowError(editor.document, doc, "Add Today");
     if (!mostRecentDay) {
-        // add year month day and (maybe daily log)?
-        // TODO pop up dialog box asking to start from a new template
+        return false;
     } else {
 
         const mostRecentYear = mostRecentDay.monthSection?.yearSection?.year;
@@ -42,7 +45,7 @@ export async function addToday() {
             editor.selection = new vscode.Selection(endPosition, endPosition);
             editor.revealRange(new vscode.Range(startPosition, endPosition), vscode.TextEditorRevealType.InCenter);
             vscode.window.showInformationMessage("Today already exists");
-            return;
+            return true;
         }
 
         if (mostRecentYear !== year) {
@@ -55,7 +58,7 @@ export async function addToday() {
         }
 
         edits.push(getDailyHeader(month, day),);
-        edits.push(removeCompleteAndCancelledContent(getMostRecentDayContent(doc)));
+        edits.push(carryOverDayContent(getMostRecentDayContent(doc) ?? '', getTabSize(editor.document)));
 
 
         // Set cursor just after the last month (it will be moved up later)
@@ -71,5 +74,6 @@ export async function addToday() {
 
         // TODO Only if cursor not at end of doc?
         moveCursorUpNLines(1);
+        return true;
     }
 }

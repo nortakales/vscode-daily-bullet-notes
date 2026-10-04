@@ -1,5 +1,19 @@
 # Change Log
 
+## 0.3.0 - 2026-10-04
+
+* Fixed parent task being marked complete `[x]` or removed `[-]` when a sub-task was planned for tomorrow `[>]`, which also orphaned that sub-task on the next day
+* Fixed parent task not updating when a sub-task was marked removed `[-]`
+* Fixed tasks indented under a plain note being treated as sub-tasks of the task above the note
+* Fixed parent task statuses never updating for a day whose first task was indented
+* Fixed sub-tasks being ignored at an in-between indent level, or nested under the wrong task when mixing tabs and spaces
+* Parent task status now updates when sub-tasks are deleted, cut or pasted
+* Fixed status updates sometimes being written to the wrong file if you switched editors right after an edit
+* Automatic `[ ]` boxes, status updates and click-to-select in boxes now only happen in Daily Bullet Notes files
+* `Add Today` no longer carries over notes or sub-tasks indented under a complete or removed task, and carries over a top level note if open tasks are indented under it
+* Clear error message when your file is missing a valid `Daily Log` header box (or has no days), with an option to start a new file
+* Renamed `New DBM File` to `Initialize New DBM File`, added it to the Daily Bullet Notes menu, and added a `[>]` example to the template
+
 ## 0.2.0 - 2026-03-17
 
 * Under the hood performance improvements

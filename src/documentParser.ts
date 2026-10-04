@@ -2,12 +2,15 @@ import * as vscode from 'vscode';
 import { DailyBulletNotesDocument, DailyLog, DailySection, ListSection, MonthSection, YearSection } from './documentModel';
 import { getMonthFromString } from './strings';
 
+export const BOX_BORDER_REGEX = /^\+\-{20,100}\+/;
+export const DAILY_LOG_TITLE_REGEX = /^\|\s+Daily Log\s+\|/;
+
 const parseCache = new Map<string, { version: number; result: DailyBulletNotesDocument }>();
 
 class Parser {
 
-    private startOrEndOfBoxRegex = /^\+\-{20,100}\+/;
-    private dailyLogTitleLineRegex = /^\|\s+Daily Log\s+\|/;
+    private startOrEndOfBoxRegex = BOX_BORDER_REGEX;
+    private dailyLogTitleLineRegex = DAILY_LOG_TITLE_REGEX;
     private yearBoxTitleLineRegex = /^\|\s+(\d{4})\s+\|/;
     private monthBoxTitleLineRegex = /^\|\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+\|/;
     private listBoxTitleLineRegex = /^\|\s+([^\s]+.*?)\s+\|/;
@@ -277,7 +280,7 @@ class Parser {
 
 
         const result: DailyBulletNotesDocument = {
-            dailyLog: dailyLog!,
+            dailyLog: dailyLog ?? undefined,
             listSections: listSections
         };
         parseCache.set(cacheKey, { version: this.document.version, result });

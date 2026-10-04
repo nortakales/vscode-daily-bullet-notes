@@ -1,7 +1,8 @@
 import { FoldingRange } from "vscode";
 
 export interface DailyBulletNotesDocument {
-    dailyLog: DailyLog;
+    /** Undefined if the file has no valid "Daily Log" header box */
+    dailyLog?: DailyLog;
     listSections: ListSection[];
 }
 

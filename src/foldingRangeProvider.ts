@@ -10,8 +10,11 @@ class DBMFoldingRangeProvider implements vscode.FoldingRangeProvider {
 
         const ranges: vscode.FoldingRange[] = [];
 
-        ranges.push(parsedDocument.dailyLog.range);
-        parsedDocument.dailyLog.yearSections.forEach(yearSection => {
+        const dailyLog = parsedDocument.dailyLog;
+        if (dailyLog) {
+            ranges.push(dailyLog.range);
+        }
+        dailyLog?.yearSections.forEach(yearSection => {
             ranges.push(yearSection.range);
             yearSection.monthSections.forEach(monthSection => {
                 ranges.push(monthSection.range);

@@ -25,7 +25,7 @@
     "lists",
     "todo list"
   ],
-  "version": "0.2.0",
+  "version": "0.3.0",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -56,7 +56,7 @@
       },
       {
         "command": "daily-bullet-notes.newFile",
-        "title": "New DBM File",
+        "title": "Initialize New DBM File",
         "icon": "$(new-file)"
       }
     ],
@@ -118,6 +118,10 @@
         },
         {
           "command": "daily-bullet-notes.standupView",
+          "when": "editorLangId == daily-bullet-notes"
+        },
+        {
+          "command": "daily-bullet-notes.newFile",
           "when": "editorLangId == daily-bullet-notes"
         }
       ]

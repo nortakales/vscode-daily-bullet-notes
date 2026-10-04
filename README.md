@@ -7,6 +7,9 @@ This VSCode extension is designed specifically around my way of tracking daily t
 Here is an example
 ```
 +----------------------------------------+
+|               Daily Log                |
++----------------------------------------+
++----------------------------------------+
 |                  2024                  |
 +----------------------------------------+
 +----------------------------------------+
@@ -31,7 +34,7 @@ Here is a quick note you took about the day, like you took the afternoon off or 
 This is an example where you might keep things like your career goals,
 longstanding tasks on your backburner, ideas for an upcoming hackathon,
 some inspirational quotes, or even just your last meeting notes.
-You can create many lists like this, and they wil always live just below
+You can create many lists like this, and they will always live just below
 your latest daily entry.
 ```
 
@@ -60,7 +63,7 @@ The main benefits of this method to me are:
 ## Getting Started
 
 1. Get this extension
-2. Run [New DBM File](command:daily-bullet-notes.newFile) to create a new file from a template that will get you started
+2. Run [Initialize New DBM File](command:daily-bullet-notes.newFile) to create a new file with everything needed for today, pre-populated with an example of each type of task
 
 ## Extension Features
 
@@ -73,10 +76,10 @@ The main benefits of this method to me are:
 | Title                    | Command                                     | Description                                                                                                                                                                                              |
 | ------------------------ | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Add Today + Standup View | `daily-bullet-notes.addTodayAndStandupView` | I start every day with this command. As the name suggests, it is simply a combination of `Add Today` and `Standup View`. Read those descriptions for more info.                                          |
-| Add Today                | `daily-bullet-notes.addToday`               | Copies the previous day to a new day with today's date, preserving all tasks that are not complete `[x]` or removed `[-]` and any sub-tasks/notes for those tasks. Top level notes are not carried over. |
+| Add Today                | `daily-bullet-notes.addToday`               | Copies the previous day to a new day with today's date, preserving all tasks that are not complete `[x]` or removed `[-]` and any sub-tasks/notes for those tasks. Anything indented under a complete or removed task is dropped along with it. Top level notes are not carried over, unless open tasks are indented under them. |
 | Standup View             | `daily-bullet-notes.standupView`            | Collapses the entire document except for the two most recent days (usually this would be today and yesterday).                                                                                           |
 | Add New List             | `daily-bullet-notes.addNewList`             | Shortcut for adding a new list at the bottom of your document with a nicely formatted header box.                                                                                                        |
-| New DBM File             | `daily-bullet-notes.newFile`                | A quick way for new users to get started with a template.                                                                                                                                                |
+| Initialize New DBM File  | `daily-bullet-notes.newFile`                | Opens a new file with everything needed for today (`Daily Log`, year, month and today's headers), with today pre-populated with an example of each type of task and an example list.                     |
 
 ## Settings
 

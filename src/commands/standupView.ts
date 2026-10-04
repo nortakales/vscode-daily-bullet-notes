@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import Parser from '../documentParser';
+import { getMostRecentDayOrShowError } from '../dailyLogCheck';
 
 
 
@@ -13,9 +14,8 @@ export async function standupView() {
     const parser = new Parser(editor.document);
     const doc = parser.parseDocument();
 
-    const mostRecentDay = doc.dailyLog.mostRecentDay;
+    const mostRecentDay = getMostRecentDayOrShowError(editor.document, doc, "Standup View");
     if (!mostRecentDay) {
-        // TODO
         return;
     }
 

@@ -1,8 +1,11 @@
 import * as vscode from 'vscode';
-import { parseCursorPositionForBox } from './utilities';
+import { DBM_LANGUAGE_ID, parseCursorPositionForBox } from './utilities';
 
 export async function onSelectionChange(event: vscode.TextEditorSelectionChangeEvent) {
 
+    if (event.textEditor.document.languageId !== DBM_LANGUAGE_ID) {
+        return;
+    }
     // Only run this for mouse clicks
     if (event.kind !== vscode.TextEditorSelectionChangeKind.Mouse) {
         return;

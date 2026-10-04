@@ -1,28 +1,42 @@
 import * as vscode from 'vscode';
 import * as settings from './settings';
-import { computeCombinedStatus, getDayFromLineNumber, getIndentLevel, parseCursorPositionForBox } from './utilities';
+import { applyEditsToDocument, DBM_LANGUAGE_ID, getDayFromLineNumber, getTabSize, parseCursorPositionForBox } from './utilities';
+import { computeCombinedStatus, computeParentStatusUpdates, getIndentLevel } from './taskLogic';
 import Parser from './documentParser';
-import { DailyBulletNotesDocument } from './documentModel';
 
 // TODO finalize a solution, and perhaps provide a setting to control it
 const fullUpdates = true;
 
-let statusUpdateTimer: ReturnType<typeof setTimeout> | undefined;
+// Pending status updates, debounced per document
+const statusUpdateTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-function scheduleStatusUpdate(event: vscode.TextDocumentChangeEvent): void {
-    clearTimeout(statusUpdateTimer);
-    statusUpdateTimer = setTimeout(() => {
-        statusUpdateTimer = undefined;
-        updateStatusesForFullDay(event).catch(console.error);
-    }, 200);
+// True while status updates are being written, so those edits don't trigger another update
+let applyingStatusUpdates = false;
+
+function scheduleStatusUpdate(document: vscode.TextDocument, editedLine: number): void {
+    const key = document.uri.toString();
+    clearTimeout(statusUpdateTimers.get(key));
+    statusUpdateTimers.set(key, setTimeout(() => {
+        statusUpdateTimers.delete(key);
+        updateStatusesForFullDay(document, editedLine).catch(console.error);
+    }, 200));
 }
 
 export async function onDocumentChange(event: vscode.TextDocumentChangeEvent) {
 
     //console.log(event);
 
-    // TODO process undo/redo differently?
-
+    if (event.document.languageId !== DBM_LANGUAGE_ID) {
+        return;
+    }
+    if (applyingStatusUpdates) {
+        return;
+    }
+    // Undo/redo restores earlier text, including any status updates made at the time,
+    // so don't add boxes or recalculate statuses on top of it
+    if (event.reason === vscode.TextDocumentChangeReason.Undo || event.reason === vscode.TextDocumentChangeReason.Redo) {
+        return;
+    }
     if (event.contentChanges.length !== 1) {
         return;
     }
@@ -30,6 +44,7 @@ export async function onDocumentChange(event: vscode.TextDocumentChangeEvent) {
     const document = event.document;
     const change = event.contentChanges[0];
     const text = change.text;
+    const editedLine = change.range.start.line;
 
     // TODO edge cases missing for full day updates:
     // space before a box: check if text is ' ' and range is before the box
@@ -40,41 +55,50 @@ export async function onDocumentChange(event: vscode.TextDocumentChangeEvent) {
 
     // TODO refactor all of this
 
-    const lineText = document.lineAt(change.range.start.line).text;
+    const lineText = document.lineAt(editedLine).text;
     if (lineText.match(/^\s*\[.?\]/)) {
         const indentLevel = getIndentLevel(lineText);
-        if (change.range.start.character <= indentLevel && text !== '[ ] ' && text !== lineText) {
+        if (change.range.start.character <= indentLevel && text !== '[ ] ') {
             console.log("indent level");
-            scheduleStatusUpdate(event);
+            scheduleStatusUpdate(document, editedLine);
             return;
         }
     }
 
-    if (text.match(/^\r?\n\s*$/)) {
+    const isNewLine = /^\r?\n\s*$/.test(text);
+    let needsStatusUpdate = false;
+
+    if (isNewLine) {
         console.log("newline");
-        if (await processNewLine(event)) {
-            scheduleStatusUpdate(event);
-        }
+        needsStatusUpdate = await processNewLine(event);
     } else if (text.length === 0) {
         console.log("backspace");
-        if (await processBackspace(event)) {
-            scheduleStatusUpdate(event);
-        }
+        needsStatusUpdate = await processBackspace(event);
     } else if (text.match(/\t|\s{2,}/)) {
         // TODO will not work if someone's indent level is just 1 space
         console.log("tab");
         await processTab(event);
-    } else if (text.length === 1 && text.match(/[ x+/->]/)) {
-        const parsedBox = parseCursorPositionForBox(change.range.start, event.document);
+    } else if (text.length === 1 && text.match(/[ x+\/>\-]/)) {
+        const parsedBox = parseCursorPositionForBox(change.range.start, document);
         if (parsedBox) {
             console.log("[" + parsedBox.innerPart + "]");
             await processUpdatedBox(event);
-            scheduleStatusUpdate(event);
+            needsStatusUpdate = true;
         }
+    }
+
+    // Deleting a selection or whole lines, or pasting multiple lines, can add or remove sub-tasks
+    const spansLines = change.range.start.line !== change.range.end.line;
+    if (change.rangeLength > 1 || spansLines || (text.includes('\n') && !isNewLine)) {
+        needsStatusUpdate = true;
+    }
+
+    if (needsStatusUpdate) {
+        scheduleStatusUpdate(document, editedLine);
     }
 }
 
-async function updateStatusesForFullDay(event: vscode.TextDocumentChangeEvent, dbmDoc?: DailyBulletNotesDocument) {
+async function updateStatusesForFullDay(document: vscode.TextDocument, editedLine: number) {
 
     if (!settings.automaticStatusUpdates()) {
         return;
@@ -82,134 +106,41 @@ async function updateStatusesForFullDay(event: vscode.TextDocumentChangeEvent, d
     if (!fullUpdates) {
         return;
     }
+    if (document.isClosed) {
+        return;
+    }
 
     console.log("Updating full day");
 
-    const document = event.document;
-    const editedLine = event.contentChanges[0].range.start.line;
-    // TODO what if this line was added to the end of the day? will below break?
-
-    if (!dbmDoc) {
-        dbmDoc = new Parser(document).parseDocument();
-    }
-    const dailySection = getDayFromLineNumber(editedLine, dbmDoc);
+    const dbmDoc = new Parser(document).parseDocument();
+    const dailySection = getDayFromLineNumber(Math.min(editedLine, document.lineCount - 1), dbmDoc);
     if (!dailySection) {
         return;
     }
 
-    let topLevelTasks: Task[] = [];
-    let previousTaskStack: Task[] = [];
-
-    // Parse the entire day into a hierarchy of just tasks (no notes necessary)
-    for (let lineNumber = dailySection.range.start + 1; lineNumber < dailySection.range.end + 1; lineNumber++) {
-        const lineText = document.lineAt(lineNumber).text;
-
-        // Check if it is a task
-        const match = lineText.match(/^\s*\[(.?)\]/);
-        if (match) {
-
-            const indentLevel = getIndentLevel(lineText);
-
-            const thisTask: Task = {
-                lineNumber: lineNumber,
-                originalText: lineText,
-                indentLevel: indentLevel,
-                subtasks: [],
-                originalStatus: match[1],
-                newStatus: match[1]
-
-            };
-
-            if (previousTaskStack.length === 0) {
-                topLevelTasks.push(thisTask);
-                previousTaskStack.push(thisTask);
-            } else {
-                let previousTask = previousTaskStack[previousTaskStack.length - 1];
-                if (previousTask.indentLevel > thisTask.indentLevel) {
-                    // We went left, loop until we find correct indent level as it might be more than one level back
-                    while (previousTask.indentLevel > thisTask.indentLevel) {
-                        previousTaskStack.pop();
-                        previousTask = previousTaskStack[previousTaskStack.length - 1];
-                    }
-                    if (previousTask.indentLevel < thisTask.indentLevel) {
-                        // This task is in some weird in between indent level
-                    } else {
-                        // Same level
-                        previousTaskStack.pop();
-                        if (previousTaskStack.length === 0) {
-                            topLevelTasks.push(thisTask);
-                        } else {
-                            previousTaskStack[previousTaskStack.length - 1].subtasks.push(thisTask);
-                        }
-                        previousTaskStack.push(thisTask);
-
-                    }
-
-                } else if (previousTask.indentLevel < thisTask.indentLevel) {
-                    // We went right
-                    previousTask.subtasks.push(thisTask);
-                    previousTaskStack.push(thisTask);
-                } else {
-                    // Same level
-                    previousTaskStack.pop();
-                    if (previousTaskStack.length === 0) {
-                        topLevelTasks.push(thisTask);
-                    } else {
-                        previousTaskStack[previousTaskStack.length - 1].subtasks.push(thisTask);
-                    }
-                    previousTaskStack.push(thisTask);
-                }
-            }
-        }
+    const firstLine = dailySection.range.start + 1;
+    const lines: string[] = [];
+    for (let lineNumber = firstLine; lineNumber <= dailySection.range.end; lineNumber++) {
+        lines.push(document.lineAt(lineNumber).text);
     }
 
-    //console.log(topLevelTasks);
-
-    for (let task of topLevelTasks) {
-        updateTaskStatusBasedOnSubtasks(task);
-    }
-
-    //console.log(topLevelTasks);
-
-    await vscode.window.activeTextEditor?.edit(editBuilder => {
-        for (let task of topLevelTasks) {
-            updateTaskStatusInDocument(task, editBuilder, document);
-        }
-    });
-}
-
-function updateTaskStatusInDocument(task: Task, editBuilder: vscode.TextEditorEdit, document: vscode.TextDocument) {
-    for (let subtask of task.subtasks) {
-        updateTaskStatusInDocument(subtask, editBuilder, document);
-    }
-    if (task.newStatus === task.originalStatus) {
+    const updates = computeParentStatusUpdates(lines, getTabSize(document));
+    if (updates.length === 0) {
         return;
     }
-    const newText = task.originalText.replace('[' + task.originalStatus + ']', '[' + task.newStatus + ']');
-    editBuilder.replace(document.lineAt(task.lineNumber).range, newText);
-}
 
-function updateTaskStatusBasedOnSubtasks(task: Task) {
-
-    if (task.subtasks.length > 0) {
-        for (let subtask of task.subtasks) {
-            updateTaskStatusBasedOnSubtasks(subtask);
-        }
-        task.newStatus = computeCombinedStatus(task.subtasks.map(subtask => subtask.newStatus));
+    // Only replace the boxes themselves, and write to the document that was edited,
+    // which is not necessarily the active editor anymore
+    applyingStatusUpdates = true;
+    try {
+        await applyEditsToDocument(document, updates.map(update => ({
+            range: new vscode.Range(firstLine + update.lineIndex, update.boxStart, firstLine + update.lineIndex, update.boxEnd),
+            text: update.newBox
+        })));
+    } finally {
+        applyingStatusUpdates = false;
     }
 }
-
-
-interface Task {
-    lineNumber: number,
-    originalText: string,
-    subtasks: Task[],
-    indentLevel: number,
-    originalStatus: string,
-    newStatus: string
-}
-
-
 
 async function processNewLine(event: vscode.TextDocumentChangeEvent): Promise<boolean> {
     const document = event.document;
@@ -250,10 +181,7 @@ async function processBackspace(event: vscode.TextDocumentChangeEvent): Promise<
     let needsUpdate = false;
 
     if (lineText.match(/^\s*\[ \]$/)) {
-        // TODO might be making a bad assumption on the editor being the active one?
-        await vscode.window.activeTextEditor?.edit(editBuilder => {
-            editBuilder.replace(document.lineAt(line).range, lineText.replace('[ ]', ''));
-        });
+        await applyEditsToDocument(document, [{ range: document.lineAt(line).range, text: lineText.replace('[ ]', '') }]);
         needsUpdate = true;
     }
 
@@ -274,8 +202,12 @@ async function processTab(event: vscode.TextDocumentChangeEvent) {
     // Note: this one can easily get into an infinite loop if not careful
 
     if (lineText.match(/^\s*\[ \]\s\s{2,}$/)) {
-        // TODO might be making a bad assumption on the editor being the active one?
-        await vscode.window.activeTextEditor?.edit(editBuilder => {
+        // The indent command below works on the active editor, so only continue if that is this document
+        const editor = vscode.window.activeTextEditor;
+        if (editor?.document !== document) {
+            return;
+        }
+        await editor.edit(editBuilder => {
             editBuilder.replace(document.lineAt(line).range, lineText.replace(/\[ \]\s*/, '[ ] '));
         });
         await vscode.commands.executeCommand('editor.action.indentLines');
@@ -343,11 +275,8 @@ async function processUpdatedBox(event: vscode.TextDocumentChangeEvent) {
         const replacementText = boxContent[0].replace('[' + boxContent[1] + ']', '[' + newStatus + ']');
         const newLineText = lineText.replace(boxContent[0], replacementText);
 
-        // TODO might be making a bad assumption on the editor being the active one?
-        await vscode.window.activeTextEditor?.edit(editBuilder => {
-            // TODO backspace at this point should remove the entire box !
-            editBuilder.replace(document.lineAt(line).range, newLineText);
-        });
+        // TODO backspace at this point should remove the entire box !
+        await applyEditsToDocument(document, [{ range: document.lineAt(line).range, text: newLineText }]);
 
         // statuses.push(boxContent[1]);
     }

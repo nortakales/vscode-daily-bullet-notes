@@ -2,6 +2,7 @@ import { addToday } from './addToday';
 import { standupView } from './standupView';
 
 export async function addTodayAndStandupView() {
-    await addToday();
-    standupView();
+    if (await addToday()) {
+        await standupView();
+    }
 }

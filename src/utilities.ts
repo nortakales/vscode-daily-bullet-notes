@@ -1,6 +1,53 @@
 import * as vscode from 'vscode';
 import { DailyBulletNotesDocument } from './documentModel';
 
+export const DBM_LANGUAGE_ID = 'daily-bullet-notes';
+
+/**
+ * Finds an editor showing the given document, preferring the active editor
+ */
+export function getEditorForDocument(document: vscode.TextDocument): vscode.TextEditor | undefined {
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor?.document === document) {
+        return activeEditor;
+    }
+    return vscode.window.visibleTextEditors.find(editor => editor.document === document);
+}
+
+/**
+ * Applies edits to the given document, even if it is no longer the active editor
+ */
+export async function applyEditsToDocument(document: vscode.TextDocument, edits: { range: vscode.Range, text: string }[]): Promise<boolean> {
+    if (document.isClosed || edits.length === 0) {
+        return false;
+    }
+    const editor = getEditorForDocument(document);
+    if (editor) {
+        return editor.edit(editBuilder => {
+            for (const edit of edits) {
+                editBuilder.replace(edit.range, edit.text);
+            }
+        });
+    }
+    // Not visible in any editor (e.g. the user switched tabs), so edit the document directly
+    const workspaceEdit = new vscode.WorkspaceEdit();
+    for (const edit of edits) {
+        workspaceEdit.replace(document.uri, edit.range, edit.text);
+    }
+    return vscode.workspace.applyEdit(workspaceEdit);
+}
+
+/**
+ * Tab size used for the given document, so tab and space indentation can be compared
+ */
+export function getTabSize(document: vscode.TextDocument): number {
+    const tabSize = getEditorForDocument(document)?.options.tabSize;
+    if (typeof tabSize === 'number') {
+        return tabSize;
+    }
+    return vscode.workspace.getConfiguration('editor', document).get<number>('tabSize', 4);
+}
+
 export function moveCursorUpNLines(n: number) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -12,7 +59,7 @@ export function moveCursorUpNLines(n: number) {
 }
 
 export function getMostRecentDayContent(dbmDoc: DailyBulletNotesDocument): string | undefined {
-    const dailySection = dbmDoc.dailyLog.mostRecentDay;
+    const dailySection = dbmDoc.dailyLog?.mostRecentDay;
     if (!dailySection) {
         return undefined;
     }
@@ -38,7 +85,7 @@ export function getDayFromLineNumber(line: number, dbmDoc: DailyBulletNotesDocum
     // the most efficient approach in the vast majority of cases. And ideal solution might resort
     // to binary search if today or yesterday did not match first.
 
-    let day = dbmDoc.dailyLog.mostRecentDay;
+    let day = dbmDoc.dailyLog?.mostRecentDay;
 
     if (!day) {
         return undefined;
@@ -57,35 +104,6 @@ export function getDayFromLineNumber(line: number, dbmDoc: DailyBulletNotesDocum
     }
 
     return undefined;
-}
-
-export function removeCompleteAndCancelledContent(content: string | undefined) {
-    if (!content) {
-        return undefined;
-    }
-    // TODO a setting to preserve un-indented notes, not just tasks
-    // TODO grab [ ] vs [] setting
-
-    const lines = content.split(/\r?\n/);
-    const linesToKeep = [];
-    let shouldKeepNextIndentedLines = false;
-    for (let line of lines) {
-        let match = line.match(/^\s*(\[[^x\-]?\])/);
-        if (match) {
-            // clear out any progress/blocked/etc markers
-            const modifiedLine = line.replace(match[1], '[ ]');
-            linesToKeep.push(modifiedLine);
-            shouldKeepNextIndentedLines = true;
-        } else if (line.match(/^\s/)) {
-            // Check if we should keep the indented lines, but not if they have [x] or [-]
-            if (shouldKeepNextIndentedLines && !line.match(/^\s*(\[[x\-]\])/)) {
-                linesToKeep.push(line);
-            }
-        } else {
-            shouldKeepNextIndentedLines = false;
-        }
-    }
-    return linesToKeep.join("\n");
 }
 
 export function parseCursorPositionForBox(position: vscode.Position, document: vscode.TextDocument) {
@@ -121,77 +139,4 @@ export function parseCursorPositionForBox(position: vscode.Position, document: v
             new vscode.Position(line, innerSectionStartCharacter - 1),
             new vscode.Position(line, innerSectionStartCharacter + 1 + innerSectionLength)),
     };
-}
-
-export function computeCombinedStatus(statuses: string[]) {
-    if (!statuses || statuses.length === 0) {
-        return ' ';
-    }
-    if (statuses.length === 1) {
-        return statuses[0];
-    }
-
-    const uniqueStatuses = new Set(statuses);
-    const finishedAtLeastOneTask = uniqueStatuses.has('x');
-    if (uniqueStatuses.has(' ') && uniqueStatuses.has('')) {
-        // TODO grab [ ] vs [] setting to decide which to remove
-        uniqueStatuses.delete('');
-    }
-
-    // remove statuses in reverse priority order until we reach just 1
-
-    if (uniqueStatuses.size === 1) {
-        return [...uniqueStatuses][0];
-    }
-
-    uniqueStatuses.delete('>');
-
-    if (uniqueStatuses.size === 1) {
-        return [...uniqueStatuses][0];
-    }
-
-    uniqueStatuses.delete('-');
-
-    if (uniqueStatuses.size === 1) {
-        return [...uniqueStatuses][0];
-    }
-
-    uniqueStatuses.delete('x');
-
-    if (uniqueStatuses.size === 1) {
-        if (finishedAtLeastOneTask) {
-            return '+';
-        } else {
-            return [...uniqueStatuses][0];
-        }
-    }
-
-    uniqueStatuses.delete('/');
-
-    if (uniqueStatuses.size === 1) {
-        if (finishedAtLeastOneTask) {
-            return '+';
-        } else {
-            return [...uniqueStatuses][0];
-        }
-    }
-
-    uniqueStatuses.delete('');
-    uniqueStatuses.delete(' ');
-    if (uniqueStatuses.size === 1) {
-        return [...uniqueStatuses][0];
-    }
-
-    // There should only be + at this point
-    // TODO what if there is other stuff in here?
-    return '+';
-}
-
-export function getIndentLevel(line: string) {
-    // Note: Behavior with a mix of tabs/spaces is going to be wrong
-    const match = line.match(/^\s+/);
-    if (!match) {
-        return 0;
-    }
-    return match[0].split('').length;
 }
