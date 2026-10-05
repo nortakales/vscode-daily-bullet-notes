@@ -100,6 +100,14 @@ export function getDayFromLineNumber(line: number, dbmDoc: DailyBulletNotesDocum
     return undefined;
 }
 
+/**
+ * The list section (one of the lists after the daily log) containing this line, if any. Its range starts at the
+ * list box's bottom border, so its content is range.start + 1 to range.end, like a day.
+ */
+export function getListFromLineNumber(line: number, dbmDoc: DailyBulletNotesDocument) {
+    return dbmDoc.listSections.find(list => list.range.start < line && line <= list.range.end);
+}
+
 export function parseCursorPositionForBox(position: vscode.Position, document: vscode.TextDocument) {
 
     const character = position.character;

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as settings from './settings';
-import { applyEditsToDocument, DBM_LANGUAGE_ID, getDayFromLineNumber, getTabSize, parseCursorPositionForBox } from './utilities';
+import { applyEditsToDocument, DBM_LANGUAGE_ID, getDayFromLineNumber, getListFromLineNumber, getTabSize, parseCursorPositionForBox } from './utilities';
 import { computeCombinedStatus, computeParentStatusUpdates, getIndentLevel } from './taskLogic';
 import Parser from './documentParser';
 import { isRenderedViewEdit } from './rendered/renderedViewProvider';
@@ -118,14 +118,16 @@ async function updateStatusesForFullDay(document: vscode.TextDocument, editedLin
     console.log("Updating full day");
 
     const dbmDoc = new Parser(document).parseDocument();
-    const dailySection = getDayFromLineNumber(Math.min(editedLine, document.lineCount - 1), dbmDoc);
-    if (!dailySection) {
+    // The day being edited, or one of the lists after the daily log
+    const line = Math.min(editedLine, document.lineCount - 1);
+    const section = getDayFromLineNumber(line, dbmDoc) ?? getListFromLineNumber(line, dbmDoc);
+    if (!section) {
         return;
     }
 
-    const firstLine = dailySection.range.start + 1;
+    const firstLine = section.range.start + 1;
     const lines: string[] = [];
-    for (let lineNumber = firstLine; lineNumber <= dailySection.range.end; lineNumber++) {
+    for (let lineNumber = firstLine; lineNumber <= section.range.end; lineNumber++) {
         lines.push(document.lineAt(lineNumber).text);
     }
 

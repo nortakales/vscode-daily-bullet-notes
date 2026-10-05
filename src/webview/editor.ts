@@ -11,8 +11,11 @@ import {
 } from './commands';
 import { blockField, dbmActions, DbmActions, findStatusIcon, IS_MAC, isLockedTask, linePlugin, linkAtEvent, linkPlugin } from './decorations';
 import { StatusPicker } from './picker';
+import { caretLayer } from './caret';
+import { logBar } from './logbar';
+import { pinnedHeaders } from './pinned';
 import { clampCursor, configField, dbmStateExtensions, foldEffect, foldField, Region, regionAt, setFoldsEffect, structureField, tabSizeOf } from './state';
-import { analyzeLine, sectionsContaining, standupDays, standupFoldKeys, STATUS_INFO, statusKind } from './structure';
+import { analyzeLine, sectionsContaining, sectionsOf, standupDays, standupFoldKeys, STATUS_INFO, statusKind } from './structure';
 
 export const tabSizeCompartment = new Compartment();
 
@@ -169,6 +172,12 @@ export function expandAll(view: EditorView) {
     view.dispatch({ effects: setFoldsEffect.of([]) });
 }
 
+/** Folds every section at every level (years, months, days and lists), like VS Code's Fold All */
+export function collapseAll(view: EditorView) {
+    view.dispatch({ effects: setFoldsEffect.of(sectionsOf(view.state.field(structureField)).map(section => section.key)) });
+    moveCursorOutOfFolds(view);
+}
+
 /** Unfolds the sections around a line, puts the cursor on it and scrolls it to the middle */
 export function reveal(view: EditorView, target: RevealTarget) {
     const doc = view.state.doc;
@@ -245,6 +254,7 @@ export function createExtensions(options: EditorOptions): Extension[] {
         openPicker: (view, lineNumber, anchor) => openPicker(view, lineNumber, anchor.getBoundingClientRect(), options),
         standupView: applyStandupView,
         expandAll,
+        collapseAll,
         toggleFold,
         announce: options.announce,
         openLink: options.openLink,
@@ -272,6 +282,9 @@ export function createExtensions(options: EditorOptions): Extension[] {
         linePlugin,
         linkPlugin,
         dbmActions.of(actions),
+        // Before search(), so the toolbar sits above the search panel
+        logBar,
+        pinnedHeaders,
         // Ctrl/Cmd+Click opens a link; a plain click just places the cursor
         EditorView.domEventHandlers({
             mousedown(event, view) {
@@ -290,7 +303,9 @@ export function createExtensions(options: EditorOptions): Extension[] {
         // A centered column of limited width, or the full width of the panel
         EditorView.editorAttributes.compute([configField], state => ({ class: state.field(configField).centered === false ? 'dbm-full-width' : 'dbm-centered' })),
         EditorView.lineWrapping,
+        // drawSelection draws the selection; caret.ts draws the cursor like VS Code's
         drawSelection(),
+        caretLayer,
         dropCursor(),
         search({ top: true, scrollToMatch: range => EditorView.scrollIntoView(range, { y: 'center' }) }),
         EditorView.contentAttributes.of({ 'aria-label': 'Daily Bullet Notes', spellcheck: 'false', autocorrect: 'off', autocapitalize: 'off' }),

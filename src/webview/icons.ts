@@ -27,6 +27,8 @@ export const UI_ICONS = {
     notebook: ui('<rect x="3" y="1.5" width="10.5" height="13" rx="1.5"/><path d="M5.75 1.5v13M8.25 5h3M8.25 7.5h3"/>'),
     list: ui('<path d="M5.5 4h8.5M5.5 8h8.5M5.5 12h8.5"/><path d="M2.25 4h.3M2.25 8h.3M2.25 12h.3" stroke-width="1.8"/>'),
     fold: ui('<path d="M4.5 2.5L8 6l3.5-3.5M4.5 13.5L8 10l3.5 3.5"/>'),
+    /** Chevrons pointing together onto a line: fold everything (Expand all's chevrons point apart) */
+    collapseAll: ui('<path d="M4.5 1.5L8 5l3.5-3.5M4.5 14.5L8 11l3.5 3.5M2.5 8h11"/>'),
     /** Two speech bubbles: a standup meeting */
     standup: ui('<path d="M1.5 3.5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1H5.5L3 11V9H2.5a1 1 0 0 1-1-1z"/><path d="M12.5 6h1a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1H13V14.5l-2.5-2h-3a1 1 0 0 1-1-1V11"/>'),
     unfold: ui('<path d="M4.5 6L8 2.5 11.5 6M4.5 10L8 13.5 11.5 10"/>'),

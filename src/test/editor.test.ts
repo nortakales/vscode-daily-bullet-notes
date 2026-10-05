@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { getNewFileTemplate, getNewLogHeaders } from '../strings';
+import { getBoxHeader, getNewFileTemplate, getNewLogHeaders } from '../strings';
 import { describeMissingDailyLog } from '../dailyLogCheck';
 
 // Integration tests that drive a real editor, since status updates are triggered by edit events
@@ -37,6 +37,16 @@ suite('Editor integration', () => {
 
 	suiteSetup(async () => {
 		await vscode.extensions.getExtension('nortakales.daily-bullet-notes')!.activate();
+	});
+
+	test('parent statuses also update in lists after the daily log', async () => {
+		const list = getBoxHeader('Backburner').split('\n');
+		const editor = await open([...HEADERS, '[ ] day task', '', ...list, '[ ] Project', '    [ ] step one', '    [x] step two', '', ...getBoxHeader('Ideas').split('\n'), 'an idea']);
+		const project = FIRST + 2 + list.length;
+		await typeInBox(editor, project + 1, 'x');
+		assert.ok(await waitFor(() => line(editor, project) === '[x] Project'), line(editor, project));
+		await typeInBox(editor, project + 2, ' ');
+		assert.ok(await waitFor(() => line(editor, project) === '[+] Project'), line(editor, project));
 	});
 
 	test('typing - into a sub-task updates the parent', async () => {

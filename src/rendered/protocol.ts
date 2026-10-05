@@ -31,6 +31,21 @@ export interface ViewConfig {
     today: { year: number; month: number; day: number };
     /** daily-bullet-notes.renderedView.centeredLayout: a centered column of limited width, instead of the full width */
     centered: boolean;
+    /** The user's text editor cursor settings, so the rendered view's cursor looks and blinks the same */
+    cursor: CursorConfig;
+    /** daily-bullet-notes.renderedView.pinToolbar: the Daily Log toolbar stays at the top instead of scrolling away */
+    pinToolbar: boolean;
+    /** daily-bullet-notes.renderedView.pinHeaders: the current year and month stay at the top while scrolling */
+    pinHeaders: boolean;
+}
+
+export interface CursorConfig {
+    /** editor.cursorStyle */
+    style: 'line' | 'block' | 'underline' | 'line-thin' | 'block-outline' | 'underline-thin';
+    /** editor.cursorWidth: width in pixels of the 'line' style (0 means the default of 2) */
+    width: number;
+    /** editor.cursorBlinking */
+    blinking: 'blink' | 'smooth' | 'phase' | 'expand' | 'solid';
 }
 
 export interface RevealTarget {

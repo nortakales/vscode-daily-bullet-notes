@@ -6,8 +6,8 @@ import { Annotation, ChangeSet, EditorSelection, EditorState, StateEffect, State
 import type { ViewConfig } from '../rendered/protocol';
 import { computeParentStatusUpdates } from '../taskLogic';
 import {
-    analyzeLine, BOX_BORDER_REGEX, BoxSection, countListItems, DAY_HEADER_REGEX, DaySection, daysTouching, DocStructure,
-    outermostFolded, parseStructure, Section, sectionsContaining
+    analyzeLine, BOX_BORDER_REGEX, BoxSection, countListItems, DAY_HEADER_REGEX, DaySection, DocStructure,
+    outermostFolded, parseStructure, Section, sectionsContaining, updateScopesTouching
 } from './structure';
 import { findLinks, linkForPaste } from './links';
 
@@ -23,6 +23,9 @@ export const DEFAULT_CONFIG: ViewConfig = {
     insertSpaces: true,
     today: { year: 1970, month: 1, day: 1 },
     centered: true,
+    cursor: { style: 'line', width: 0, blinking: 'blink' },
+    pinToolbar: true,
+    pinHeaders: true,
 };
 
 export const setConfigEffect = StateEffect.define<ViewConfig>();
@@ -465,22 +468,23 @@ export function parentStatusChanges(oldDoc: Text, newDoc: Text, changes: ChangeS
         return [];
     }
 
+    // Days and list sections
     const getLine = (i: number) => newDoc.line(i + 1).text;
-    const days = new Map<number, { line: number; end: number }>();
+    const scopes = new Map<number, { start: number; end: number }>();
     for (const [a, b] of touched) {
-        for (const day of daysTouching(getLine, newDoc.lines, a, b)) {
-            days.set(day.line, day);
+        for (const scope of updateScopesTouching(getLine, newDoc.lines, a, b)) {
+            scopes.set(scope.start, scope);
         }
     }
 
     const result: SimpleChange[] = [];
-    for (const day of [...days.values()].sort((x, y) => x.line - y.line)) {
+    for (const scope of [...scopes.values()].sort((x, y) => x.start - y.start)) {
         const lines: string[] = [];
-        for (let i = day.line + 1; i <= day.end; i++) {
+        for (let i = scope.start; i <= scope.end; i++) {
             lines.push(getLine(i));
         }
         for (const update of computeParentStatusUpdates(lines, tabSize)) {
-            const line = newDoc.line(day.line + 2 + update.lineIndex);
+            const line = newDoc.line(scope.start + 1 + update.lineIndex);
             // Only replace the status character(s) inside the box
             result.push({ from: line.from + update.boxStart + 1, to: line.from + update.boxEnd - 1, insert: update.newBox.slice(1, -1) });
         }

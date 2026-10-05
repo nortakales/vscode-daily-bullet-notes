@@ -25,7 +25,7 @@
     "lists",
     "todo list"
   ],
-  "version": "1.0.0",
+  "version": "1.1.0",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -100,7 +100,7 @@
           "title": "Automatic Status Updates",
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Update all task statuses automatically based on sub-tasks. *Note: this will happen only within the particular day you are editing, not the entire document.*"
+          "markdownDescription": "Update all task statuses automatically based on sub-tasks. *Note: this will happen only within the particular day (or list) you are editing, not the entire document.*"
         },
         "daily-bullet-notes.defaultView": {
           "title": "Default View",
@@ -121,6 +121,18 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Show the rendered view as a centered column of limited width. Turn this off to use the full width of the editor."
+        },
+        "daily-bullet-notes.renderedView.pinToolbar": {
+          "title": "Rendered View: Pin Toolbar",
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Keep the rendered view's toolbar (Standup view, Collapse all, Expand all) at the top while you scroll. Turn this off to have it scroll away with the document."
+        },
+        "daily-bullet-notes.renderedView.pinHeaders": {
+          "title": "Rendered View: Pin Year and Month Headers",
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Keep the year and month you are looking at pinned at the top of the rendered view while you scroll."
         }
       }
     },

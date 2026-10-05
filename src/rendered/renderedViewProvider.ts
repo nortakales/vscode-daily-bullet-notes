@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as settings from '../settings';
-import { HostMessage, RevealTarget, ViewConfig, WebviewMessage } from './protocol';
+import { CursorConfig, HostMessage, RevealTarget, ViewConfig, WebviewMessage } from './protocol';
 import { applyLineChanges, toLf } from './lineChanges';
 import { onDidChangeTokenColors, resolveStatusColors } from './themeTokenColors';
 
@@ -336,13 +336,21 @@ export class RenderedViewProvider implements vscode.CustomTextEditorProvider, vs
 
     private getConfig(document: vscode.TextDocument): ViewConfig {
         const editorConfig = vscode.workspace.getConfiguration('editor', document);
+        const dbmConfig = vscode.workspace.getConfiguration('daily-bullet-notes');
         const now = new Date();
         return {
             automaticStatusUpdates: settings.automaticStatusUpdates(),
             tabSize: editorConfig.get<number>('tabSize', 4),
             insertSpaces: editorConfig.get<boolean>('insertSpaces', true),
             today: { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() },
-            centered: vscode.workspace.getConfiguration('daily-bullet-notes').get<boolean>('renderedView.centeredLayout', true)
+            centered: dbmConfig.get<boolean>('renderedView.centeredLayout', true),
+            pinToolbar: dbmConfig.get<boolean>('renderedView.pinToolbar', true),
+            pinHeaders: dbmConfig.get<boolean>('renderedView.pinHeaders', true),
+            cursor: {
+                style: editorConfig.get<CursorConfig['style']>('cursorStyle', 'line'),
+                width: editorConfig.get<number>('cursorWidth', 0),
+                blinking: editorConfig.get<CursorConfig['blinking']>('cursorBlinking', 'blink')
+            }
         };
     }
 

@@ -2,29 +2,21 @@
 // the vertical layout), per-line decorations (indentation, status icons, badges) from a ViewPlugin that only
 // looks at the visible lines, so typing stays cheap in documents with thousands of lines.
 
-import { EditorState, Facet, RangeSet, RangeSetBuilder, StateField, Transaction } from '@codemirror/state';
+import { EditorState, RangeSet, RangeSetBuilder, StateField, Transaction } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
 import type { ViewConfig } from '../rendered/protocol';
 import { statusIconSvg, UI_ICONS } from './icons';
 import { findLinks } from './links';
 import { configField, foldField, remoteAnnotation, structureField } from './state';
 import {
-    analyzeLine, BoxSection, BULLET_GLYPHS, displayNumber, listDepth, dayContaining, DaySection, dayLabel, directSubtaskStatuses, DocStructure, isToday,
+    analyzeLine, BoxSection, BULLET_GLYPHS, BOX_BORDER_REGEX, DAY_HEADER_REGEX, displayNumber, headerHasRoom, inListSection, listDepth, dayContaining, DaySection, dayLabel, directSubtaskStatuses, DocStructure, isToday,
     StatusKind, statusKind, statusLabel, subtreeEnd, summarizeDay
 } from './structure';
 
-/** Things widgets can ask the app to do */
-export interface DbmActions {
-    openPicker(view: EditorView, lineNumber: number, anchor: HTMLElement): void;
-    standupView(view: EditorView): void;
-    expandAll(view: EditorView): void;
-    toggleFold(view: EditorView, key: string): void;
-    announce(message: string): void;
-    /** Ctrl/Cmd+Click on a link */
-    openLink(href: string): void;
-}
-
-export const dbmActions = Facet.define<DbmActions, DbmActions | undefined>({ combine: values => values[0] });
+import { dbmActions } from './actions';
+import { LogBarWidget } from './logbar';
+export { dbmActions };
+export type { DbmActions } from './actions';
 
 const LOCKED_TOOLTIP = 'Status is set from sub-tasks';
 
@@ -73,7 +65,33 @@ interface BoxProps {
     folded: boolean;
     meta: string;
     firstList: boolean;
+    /** Breathing room above (it follows content, not another header or a folded section) */
+    spaced: boolean;
 }
+
+/** The Daily Log box's lines when the toolbar is pinned: nothing (the toolbar panel in logbar.ts stands for them) */
+class HiddenBlockWidget extends WidgetType {
+    eq() {
+        return true;
+    }
+
+    get estimatedHeight() {
+        return 0;
+    }
+
+    toDOM(): HTMLElement {
+        const block = element('div', 'dbm-hidden-block');
+        block.setAttribute('aria-hidden', 'true');
+        return block;
+    }
+
+    ignoreEvent() {
+        return true;
+    }
+}
+
+const hiddenBlock = new HiddenBlockWidget();
+const logBarWidget = new LogBarWidget();
 
 class BoxWidget extends WidgetType {
     constructor(readonly props: BoxProps) {
@@ -82,49 +100,22 @@ class BoxWidget extends WidgetType {
 
     eq(other: BoxWidget) {
         const a = this.props, b = other.props;
-        return a.kind === b.kind && a.title === b.title && a.key === b.key && a.folded === b.folded && a.meta === b.meta && a.firstList === b.firstList;
+        return a.kind === b.kind && a.title === b.title && a.key === b.key && a.folded === b.folded && a.meta === b.meta && a.firstList === b.firstList &&
+            a.spaced === b.spaced;
     }
 
     get estimatedHeight() {
+        const spaced = this.props.spaced;
         switch (this.props.kind) {
-            case 'dailyLog': return 40;
-            case 'year': return 74;
-            case 'month': return 50;
-            default: return this.props.firstList ? 96 : 40;
+            case 'year': return spaced ? 60 : 48;
+            case 'month': return spaced ? 44 : 34;
+            default: return (this.props.firstList ? (spaced ? 53 : 41) : 0) + (spaced ? 34 : 27);
         }
     }
 
     toDOM(view: EditorView): HTMLElement {
         const { kind, title, key, folded, meta, firstList } = this.props;
-        const root = element('div', `dbm-box dbm-${kind}${folded ? ' dbm-folded' : ''}`);
-        if (kind === 'dailyLog') {
-            const name = element('span', 'dbm-log-name');
-            name.innerHTML = UI_ICONS.notebook;
-            name.appendChild(element('span', undefined, title));
-            root.appendChild(name);
-            const tool = (action: 'standup' | 'expand', icon: string, label: string, tooltip: string) => {
-                const button = element('button', 'dbm-tool');
-                button.type = 'button';
-                button.title = tooltip;
-                button.innerHTML = icon;
-                button.appendChild(element('span', undefined, label));
-                button.addEventListener('mousedown', event => event.preventDefault());
-                button.addEventListener('click', event => {
-                    event.preventDefault();
-                    const actions = view.state.facet(dbmActions);
-                    if (action === 'standup') {
-                        actions?.standupView(view);
-                    } else {
-                        actions?.expandAll(view);
-                    }
-                });
-                return button;
-            };
-            root.appendChild(tool('standup', UI_ICONS.standup, 'Standup view', 'Fold everything except the two most recent days'));
-            root.appendChild(tool('expand', UI_ICONS.unfold, 'Expand all', 'Unfold every year, month, day and list'));
-            return root;
-        }
-
+        const root = element('div', `dbm-box dbm-${kind}${folded ? ' dbm-folded' : ''}${this.props.spaced ? ' dbm-spaced' : ''}`);
         if (kind === 'list' && firstList) {
             root.appendChild(element('div', 'dbm-lists-heading', 'Lists'));
         }
@@ -153,14 +144,14 @@ class BoxWidget extends WidgetType {
     }
 }
 
-function boxProps(box: BoxSection, folded: boolean): BoxProps {
+function boxProps(box: BoxSection, folded: boolean, spaced: boolean): BoxProps {
     let meta = '';
     if (box.kind === 'month' && !folded) {
         meta = plural(box.dayCount, 'day');
     } else if (box.kind === 'list') {
         meta = String(box.itemCount);
     }
-    return { kind: box.kind, title: box.title, key: box.key, folded, meta, firstList: box.firstList };
+    return { kind: box.kind, title: box.title, key: box.key, folded, meta, firstList: box.firstList, spaced };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -338,7 +329,9 @@ function buildBlocks(state: EditorState): BlockValue {
     const atomic = new RangeSetBuilder<Decoration>();
     const lineFrom = (line: number) => doc.line(line + 1).from;
     const lineTo = (line: number) => doc.line(line + 1).to;
+    const getLine = (line: number) => doc.line(line + 1).text;
 
+    // The last line of the latest folded section: headers right after it stay compact
     let hiddenUntil = -1;
     const { boxes, days } = structure;
     for (let b = 0, d = 0; b < boxes.length || d < days.length;) {
@@ -352,10 +345,13 @@ function buildBlocks(state: EditorState): BlockValue {
             const folded = box.kind !== 'dailyLog' && folds.has(box.key);
             const from = lineFrom(box.line);
             const to = folded ? lineTo(box.end) : lineTo(box.line + 2);
+            const spaced = headerHasRoom(getLine, box.line, hiddenUntil);
             if (folded) {
                 hiddenUntil = box.end;
             }
-            decos.add(from, to, Decoration.replace({ widget: new BoxWidget(boxProps(box, folded)), block: true, folded }));
+            // The Daily Log box is the toolbar: pinned above the editor (nothing here), or here in the flow
+            const widget = box.kind === 'dailyLog' ? (config.pinToolbar === false ? logBarWidget : hiddenBlock) : new BoxWidget(boxProps(box, folded, spaced));
+            decos.add(from, to, Decoration.replace({ widget, block: true, folded }));
             atomic.add(from, to, hidden);
         } else if (day) {
             d++;
@@ -365,6 +361,7 @@ function buildBlocks(state: EditorState): BlockValue {
             const folded = folds.has(day.key);
             const from = lineFrom(day.line);
             const to = folded ? lineTo(day.end) : lineTo(day.line);
+            const spaced = headerHasRoom(getLine, day.line, hiddenUntil);
             let statuses: StatusKind[] = [];
             let summary = '';
             if (folded) {
@@ -382,7 +379,7 @@ function buildBlocks(state: EditorState): BlockValue {
                 key: day.key, weekday: label.weekday, date: label.date, long: label.long,
                 today: isToday(day, config.today), folded, statuses, summary,
             });
-            decos.add(from, from, Decoration.line({ class: folded ? 'dbm-day-line dbm-day-line-folded' : 'dbm-day-line' }));
+            decos.add(from, from, Decoration.line({ class: `dbm-day-line${folded ? ' dbm-day-line-folded' : ''}${spaced ? ' dbm-day-spaced' : ''}` }));
             decos.add(from, to, Decoration.replace({ widget, folded }));
             atomic.add(from, to, hidden);
         }
@@ -406,6 +403,37 @@ function touchesFolded(decos: DecorationSet, tr: Transaction): boolean {
     return touched;
 }
 
+/**
+ * Whether a change can turn the content right above a header into no content (or back), which changes the
+ * header's spacing: lines added or removed, or a line becoming blank or not, followed by a header.
+ */
+function affectsHeaderSpacing(tr: Transaction): boolean {
+    const oldDoc = tr.startState.doc, newDoc = tr.newDoc;
+    let affects = false;
+    tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
+        if (affects) {
+            return;
+        }
+        const oldA = oldDoc.lineAt(fromA).number, oldB = oldDoc.lineAt(toA).number;
+        const newA = newDoc.lineAt(fromB).number, newB = newDoc.lineAt(toB).number;
+        let changed = oldB - oldA !== newB - newA;
+        for (let i = 0; !changed && i <= newB - newA; i++) {
+            changed = (oldDoc.line(oldA + i).text.trim() === '') !== (newDoc.line(newA + i).text.trim() === '');
+        }
+        if (!changed) {
+            return;
+        }
+        for (let n = newB + 1; n <= newDoc.lines && n <= newB + 50; n++) {
+            const text = newDoc.line(n).text;
+            if (text.trim() !== '') {
+                affects = BOX_BORDER_REGEX.test(text) || DAY_HEADER_REGEX.test(text);
+                return;
+            }
+        }
+    });
+    return affects;
+}
+
 export const blockField = StateField.define<BlockValue>({
     create: buildBlocks,
     update(value, tr) {
@@ -416,7 +444,7 @@ export const blockField = StateField.define<BlockValue>({
         if (!tr.docChanged) {
             return value;
         }
-        if (tr.annotation(remoteAnnotation) || touchesFolded(value.decos, tr)) {
+        if (tr.annotation(remoteAnnotation) || touchesFolded(value.decos, tr) || affectsHeaderSpacing(tr)) {
             return buildBlocks(tr.state);
         }
         return { ...value, decos: value.decos.map(tr.changes), atomic: value.atomic.map(tr.changes) };
@@ -486,7 +514,8 @@ function buildLines(view: EditorView): { decorations: DecorationSet; atomic: Dec
                 }
                 const counted = subtasks.filter(status => statusKind(status) !== 'removed');
                 const done = counted.filter(status => statusKind(status) === 'done').length;
-                const locked = subtasks.length > 0 && config.automaticStatusUpdates && dayContaining(structure, line.number - 1) !== undefined;
+                const locked = subtasks.length > 0 && config.automaticStatusUpdates &&
+                    (dayContaining(structure, line.number - 1) !== undefined || inListSection(structure, line.number - 1));
                 decorations.add(line.from, line.from, lineDecoration(`dbm-line dbm-task dbm-task-${kind}${counted.length ? ' dbm-has-badge' : ''}`, level));
                 if (info.indentLength > 0) {
                     decorations.add(line.from, line.from + info.indentLength, hidden);
@@ -658,7 +687,8 @@ export function isLockedTask(state: EditorState, lineNumber: number): boolean {
     }
     const tabSize = config.tabSize > 0 ? config.tabSize : 4;
     const doc = state.doc;
-    if (dayContaining(state.field(structureField), lineNumber - 1) === undefined) {
+    const structure = state.field(structureField);
+    if (dayContaining(structure, lineNumber - 1) === undefined && !inListSection(structure, lineNumber - 1)) {
         return false;
     }
     const getLine = (i: number) => doc.line(i + 1).text;

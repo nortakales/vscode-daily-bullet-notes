@@ -81,6 +81,8 @@ The rendered view shows your file as a journal: years and months become headings
 * Click a task's status icon to change its status (or press `Ctrl+Enter` / `Cmd+Enter` on the task). Parent tasks don't have a picker; their status comes from their sub-tasks, just like in the text view
 * `Enter` starts a new task, `Tab`/`Shift+Tab` indent and un-indent, and `Backspace` at the start of a task turns it into a note
 * Click a year, month or day to fold it. Folded days show a summary of their tasks
+* The toolbar at the top stays visible while you scroll (turn off `Rendered View: Pin Toolbar` to let it scroll away): `Standup view` folds everything except the two most recent days, and `Expand all` / `Collapse all` unfold or fold everything
+* The year and month you are looking at stay pinned at the top while you scroll (turn off `Rendered View: Pin Year and Month Headers` to disable)
 * `Add Today`, `Standup View` and `Add New List` work in the rendered view too, and are also in its right-click menu
 * `Ctrl+F` / `Cmd+F` searches the file
 * Lines starting with `- `, `* ` or `1. ` show as bullets and numbered lists, like markdown. `Enter` continues the list
@@ -129,8 +131,10 @@ For example, in your `settings.json`:
 
 | Setting                  | Key                                         | Default | Description                                                                                                                                                  |
 | ------------------------ | ------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Automatic Status Updates | `daily-bullet-notes.automaticStatusUpdates` | `true`  | Update all task statuses automatically based on sub-tasks. *Note: this will happen only within the particular day you are editing, not the entire document.* |
+| Automatic Status Updates | `daily-bullet-notes.automaticStatusUpdates` | `true`  | Update all task statuses automatically based on sub-tasks. *Note: this will happen only within the particular day (or list) you are editing, not the entire document.* |
 | Rendered View: Centered Layout | `daily-bullet-notes.renderedView.centeredLayout` | `true` | Show the rendered view as a centered column of limited width. Turn off to use the full width of the editor. |
+| Rendered View: Pin Toolbar | `daily-bullet-notes.renderedView.pinToolbar` | `true` | Keep the rendered view's toolbar at the top while you scroll. Turn off to have it scroll away with the document. |
+| Rendered View: Pin Year and Month Headers | `daily-bullet-notes.renderedView.pinHeaders` | `true` | Keep the year and month you are looking at pinned at the top of the rendered view while you scroll. |
 | Default View             | `daily-bullet-notes.defaultView`            | `text`  | Which view opens `.dbm` files: `text` or `rendered`. You can always switch with the button in the editor title bar. Changing it updates the `workbench.editorAssociations` setting for `*.dbm` files. |
 
 ## Release Notes

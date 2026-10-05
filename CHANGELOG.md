@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.1.0 - 2026-10-05
+
+* Parent task statuses now also update automatically in the lists after the daily log, in both the text and rendered views
+* Rendered view: tighter spacing between lines, and much tighter between headers (especially collapsed ones)
+* Rendered view: the toolbar at the top is now compact, stays visible while you scroll (new `Pin Toolbar` setting), and has a new `Collapse all` button
+* Rendered view: the year and month you are looking at stay pinned at the top while you scroll (new `Pin Year and Month Headers` setting)
+* Rendered view: the cursor now matches your text editor's cursor settings (style, width and blinking) and blinks like it
+
 ## 1.0.0 - 2026-10-05
 
 * Added a rendered view: the same `.dbm` file shown as a journal, with rendered year/month/day headers, colored status icons using your theme's colors, folding with day summaries, and full editing. Everything you type is saved to the file just as if you had typed it in the text view

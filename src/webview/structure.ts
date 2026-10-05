@@ -707,3 +707,87 @@ export function listDepth(getLine: (i: number) => string, line: number, tabSize:
 }
 
 export const BULLET_GLYPHS = ['•', '◦', '▪'];
+
+// ---------------------------------------------------------------------------------------------
+// Header spacing
+
+/**
+ * Whether a header gets breathing room above it: only when what shows right before it is content (a task,
+ * note or list item, possibly followed by blank lines). Right after another header, a folded section
+ * (`hiddenUntil`: the last line of the folded section before it, or -1) or at the top it stays compact,
+ * so a stack of folded headers is dense.
+ */
+export function headerHasRoom(getLine: (i: number) => string, line: number, hiddenUntil: number): boolean {
+    let previous = line - 1;
+    while (previous >= 0 && previous > hiddenUntil && getLine(previous).trim() === '') {
+        previous--;
+    }
+    if (previous < 0 || previous <= hiddenUntil) {
+        return false;
+    }
+    const text = getLine(previous);
+    return !(BOX_BORDER_REGEX.test(text) || DAY_HEADER_REGEX.test(text));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Where parent statuses are kept up to date: days, and list sections
+
+export interface UpdateScope {
+    kind: 'day' | 'list';
+    /** First and last line of the content (for days, the line after the header) */
+    start: number;
+    end: number;
+}
+
+function isListBoxTitle(text: string): boolean {
+    return LIST_TITLE_REGEX.test(text) && !DAILY_LOG_TITLE_REGEX.test(text) && !YEAR_TITLE_REGEX.test(text) && !MONTH_TITLE_REGEX.test(text);
+}
+
+/**
+ * The section around a line whose parent statuses follow their sub-tasks: a list section (the lines after a list
+ * box up to the line before the next box border, or the end of the file), or else a day (as documentParser).
+ * Scans without a full parse, so it can run while filtering a transaction.
+ */
+export function updateScopeAt(getLine: (i: number) => string, lineCount: number, line: number): UpdateScope | undefined {
+    let dayHeader = -1;
+    for (let i = line; i >= 0; i--) {
+        const text = getLine(i);
+        if (BOX_BORDER_REGEX.test(text)) {
+            if (i < line && i >= 2 && isListBoxTitle(getLine(i - 1)) && BOX_BORDER_REGEX.test(getLine(i - 2))) {
+                let end = lineCount - 1;
+                for (let j = i + 1; j < lineCount; j++) {
+                    if (BOX_BORDER_REGEX.test(getLine(j))) {
+                        end = j - 1;
+                        break;
+                    }
+                }
+                return { kind: 'list', start: i + 1, end };
+            }
+            break;
+        }
+        if (dayHeader < 0 && DAY_HEADER_REGEX.test(text)) {
+            dayHeader = i;
+        }
+    }
+    return dayHeader < 0 ? undefined : { kind: 'day', start: dayHeader + 1, end: findDayEnd(getLine, lineCount, dayHeader) };
+}
+
+/** All update scopes that contain any line from `fromLine` to `toLine` */
+export function updateScopesTouching(getLine: (i: number) => string, lineCount: number, fromLine: number, toLine: number): UpdateScope[] {
+    const scopes: UpdateScope[] = [];
+    for (let i = fromLine; i <= toLine && i < lineCount;) {
+        const scope = updateScopeAt(getLine, lineCount, i);
+        if (scope && scope.end >= i) {
+            scopes.push(scope);
+            i = scope.end + 1;
+        } else {
+            i++;
+        }
+    }
+    return scopes;
+}
+
+/** Whether a line is in a list section of the parsed structure (where parent statuses are kept up to date) */
+export function inListSection(structure: DocStructure, line: number): boolean {
+    return structure.boxes.some(box => box.kind === 'list' && line > box.line + 2 && line <= box.end);
+}

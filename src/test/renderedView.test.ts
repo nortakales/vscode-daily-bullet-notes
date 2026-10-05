@@ -272,18 +272,20 @@ suite('Rendered view', () => {
 		}
 	});
 
-	test('the centered layout setting is sent to the webview', async () => {
-		const document = await openRendered(createFile(DAY));
-		const init = messagesFor(document, 'init')[0];
-		assert.ok(init.type === 'init' && init.config.centered === true);
-		const config = vscode.workspace.getConfiguration('daily-bullet-notes');
-		await config.update('renderedView.centeredLayout', false, vscode.ConfigurationTarget.Global);
-		try {
-			assert.ok(await waitFor(() => messagesFor(document, 'config').some(message => message.type === 'config' && message.config.centered === false)));
-		} finally {
-			await config.update('renderedView.centeredLayout', undefined, vscode.ConfigurationTarget.Global);
-		}
-	});
+	for (const [setting, field] of [['centeredLayout', 'centered'], ['pinToolbar', 'pinToolbar'], ['pinHeaders', 'pinHeaders']] as const) {
+		test(`the ${setting} setting is sent to the webview`, async () => {
+			const document = await openRendered(createFile(DAY));
+			const init = messagesFor(document, 'init')[0];
+			assert.ok(init.type === 'init' && init.config[field] === true);
+			const config = vscode.workspace.getConfiguration('daily-bullet-notes');
+			await config.update(`renderedView.${setting}`, false, vscode.ConfigurationTarget.Global);
+			try {
+				assert.ok(await waitFor(() => messagesFor(document, 'config').some(message => message.type === 'config' && message.config[field] === false)));
+			} finally {
+				await config.update(`renderedView.${setting}`, undefined, vscode.ConfigurationTarget.Global);
+			}
+		});
+	}
 
 	test('the defaultView setting decides which view opens .dbm files', async () => {
 		const config = vscode.workspace.getConfiguration('daily-bullet-notes');

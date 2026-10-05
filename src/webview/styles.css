@@ -96,7 +96,7 @@ body.vscode-high-contrast {
 }
 
 .dbm-root .cm-editor .cm-content .cm-line {
-    padding: 3px 0;
+    padding: 1px 0;
 }
 
 .dbm-root .cm-editor .cm-cursor,
@@ -104,6 +104,61 @@ body.vscode-high-contrast {
     border-left: 2px solid var(--vscode-editorCursor-foreground, var(--dbm-fg));
     margin-left: -1px;
 }
+
+/* The cursor is drawn by caret.ts, like VS Code's (style, width and blinking from the editor settings) */
+.dbm-root .cm-editor .cm-cursorLayer {
+    display: none !important;
+}
+
+.dbm-caret-layer {
+    pointer-events: none;
+}
+
+.dbm-caret {
+    position: absolute;
+    display: none;
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: pre;
+    text-align: center;
+    pointer-events: none;
+    background: var(--vscode-editorCursor-foreground, var(--dbm-fg));
+    color: var(--vscode-editorCursor-background, var(--dbm-bg));
+}
+
+.dbm-root .cm-editor.cm-focused .dbm-caret {
+    display: block;
+}
+
+.dbm-caret-block-outline {
+    background: transparent;
+    border: 1px solid var(--vscode-editorCursor-foreground, var(--dbm-fg));
+}
+
+/* Blinking like VS Code (about 1.06s per cycle). The animation name alternates between two identical keyframes
+   (-a and -b) to restart it whenever the cursor moves, so it is solid while typing. */
+.dbm-caret-layer.dbm-blinking-blink .dbm-caret {
+    animation: var(--dbm-caret-animation, none) 1.06s steps(1, end) infinite;
+}
+
+.dbm-caret-layer.dbm-blinking-smooth .dbm-caret,
+.dbm-caret-layer.dbm-blinking-phase .dbm-caret,
+.dbm-caret-layer.dbm-blinking-expand .dbm-caret {
+    animation: var(--dbm-caret-animation, none) 0.53s ease-in-out infinite alternate;
+}
+
+.dbm-caret-layer.dbm-blinking-solid .dbm-caret {
+    animation: none;
+}
+
+@keyframes dbm-caret-blink-a { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes dbm-caret-blink-b { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes dbm-caret-smooth-a { 0%, 20% { opacity: 1; } 60%, 100% { opacity: 0; } }
+@keyframes dbm-caret-smooth-b { 0%, 20% { opacity: 1; } 60%, 100% { opacity: 0; } }
+@keyframes dbm-caret-phase-a { 0%, 20% { opacity: 1; } 90%, 100% { opacity: 0; } }
+@keyframes dbm-caret-phase-b { 0%, 20% { opacity: 1; } 90%, 100% { opacity: 0; } }
+@keyframes dbm-caret-expand-a { 0%, 20% { transform: scaleY(1); } 80%, 100% { transform: scaleY(0); } }
+@keyframes dbm-caret-expand-b { 0%, 20% { transform: scaleY(1); } 80%, 100% { transform: scaleY(0); } }
 
 .dbm-root .cm-editor .cm-selectionBackground {
     background: var(--vscode-editor-inactiveSelectionBackground, rgba(128, 128, 128, 0.3)) !important;
@@ -247,33 +302,89 @@ body.vscode-high-contrast {
     cursor: pointer;
 }
 
-.dbm-dailyLog {
+/* The Daily Log box's own lines show nothing: the toolbar (logbar.ts) stands for them */
+.dbm-hidden-block {
+    height: 0;
+    overflow: hidden;
+}
+
+/* The Daily Log toolbar: a slim bar above the editor that stays visible while scrolling */
+.dbm-logbar {
+    container-type: inline-size;
+    box-sizing: border-box;
+    height: 26px;
+    overflow: hidden;
+    background: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-sideBarSectionHeader-background, var(--vscode-editorWidget-background, rgba(128, 128, 128, 0.1))));
+    border-bottom: 1px solid var(--vscode-editorGroup-border, var(--vscode-widget-border, rgba(128, 128, 128, 0.35)));
+    font: 12px/16px var(--vscode-font-family, system-ui);
+    color: var(--dbm-muted);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Not pinned: the same bar in the document flow, at the Daily Log box, scrolling with the text */
+.dbm-logbar-flow {
+    display: flow-root;
+    padding: 2px 0 4px;
+}
+
+.dbm-logbar.dbm-logbar-inline {
+    height: 26px;
+    border: 1px solid var(--vscode-editorGroup-border, var(--vscode-widget-border, rgba(128, 128, 128, 0.35)));
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 16px;
+}
+
+.dbm-logbar.dbm-logbar-inline .dbm-logbar-inner {
+    height: 24px;
+    max-width: none;
+    padding: 0 2px 0 8px;
+}
+
+body.vscode-high-contrast .dbm-logbar {
+    border-bottom-color: var(--vscode-contrastBorder, var(--dbm-fg));
+}
+
+.dbm-logbar-inner {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 0 4px;
-    font-size: 13px;
-    color: var(--dbm-muted);
+    gap: 2px;
+    box-sizing: border-box;
+    height: 25px;
+    /* Until logbar.ts lines it up with the text column */
+    max-width: 720px;
+    margin: 0 auto;
 }
 
 .dbm-log-name {
     display: flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
     margin-right: auto;
+    overflow: hidden;
+    white-space: nowrap;
     font-weight: 600;
     color: var(--dbm-fg);
+}
+
+.dbm-log-name .dbm-ui {
+    width: 14px;
+    height: 14px;
 }
 
 .dbm-tool {
     all: unset;
     box-sizing: border-box;
     display: inline-flex;
+    flex: none;
     align-items: center;
-    gap: 6px;
-    padding: 3px 8px;
+    gap: 4px;
+    height: 20px;
+    padding: 0 6px;
     border-radius: 4px;
-    font: 12px/18px var(--vscode-font-family, system-ui);
+    font: 12px/16px var(--vscode-font-family, system-ui);
     color: var(--dbm-muted);
     cursor: pointer;
     white-space: nowrap;
@@ -294,14 +405,27 @@ body.vscode-high-contrast {
     height: 14px;
 }
 
+/* Narrow panels: icon-only buttons (their tooltips and accessible names keep the labels) */
+@container (max-width: 440px) {
+    .dbm-tool-label {
+        display: none;
+    }
+}
+
+/* Headers are compact; they only get room above when they follow content (.dbm-spaced), so a stack of folded
+   headers stays dense. A header's own size never depends on whether it is folded. */
 .dbm-year {
-    padding: 22px 0 2px;
+    padding: 2px 0 0;
+}
+
+.dbm-year.dbm-spaced {
+    padding-top: 14px;
 }
 
 .dbm-year .dbm-header {
     gap: 14px;
     font-size: 40px;
-    line-height: 52px;
+    line-height: 46px;
     letter-spacing: -0.025em;
     font-weight: 650;
     color: var(--dbm-strong);
@@ -309,30 +433,38 @@ body.vscode-high-contrast {
 }
 
 .dbm-month {
-    padding: 18px 0 6px;
+    padding: 2px 0 2px;
+}
+
+.dbm-month.dbm-spaced {
+    padding-top: 12px;
 }
 
 .dbm-month .dbm-header {
-    padding-bottom: 6px;
+    padding-bottom: 3px;
     border-bottom: 1px solid var(--dbm-border);
     font-size: 20px;
-    line-height: 28px;
+    line-height: 26px;
     letter-spacing: -0.01em;
     font-weight: 600;
     color: var(--dbm-strong);
 }
 
 .dbm-month .dbm-header .dbm-chev {
-    margin-top: -13px;
+    margin-top: -12px;
 }
 
 .dbm-list {
-    padding-top: 10px;
+    padding-top: 1px;
+}
+
+.dbm-list.dbm-spaced {
+    padding-top: 8px;
 }
 
 .dbm-lists-heading {
-    margin: 34px 0 6px;
-    padding-bottom: 6px;
+    margin: 4px 0 4px;
+    padding-bottom: 4px;
     border-bottom: 1px solid var(--dbm-border);
     font-size: 20px;
     line-height: 28px;
@@ -341,10 +473,14 @@ body.vscode-high-contrast {
     color: var(--dbm-strong);
 }
 
+.dbm-list.dbm-spaced .dbm-lists-heading {
+    margin-top: 16px;
+}
+
 .dbm-list .dbm-header {
     align-items: center;
     gap: 8px;
-    height: 30px;
+    height: 26px;
     font-size: 14px;
     font-weight: 600;
     color: var(--dbm-strong);
@@ -359,10 +495,76 @@ body.vscode-high-contrast {
     color: var(--dbm-fg);
 }
 
+/* ----- Pinned year and month headers (pinned.ts): like the real headings, over the scrolling text ----- */
+
+.dbm-pinned {
+    position: absolute;
+    z-index: 4;
+    overflow: hidden;
+    pointer-events: none;
+    box-shadow: 0 3px 4px -3px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+}
+
+.dbm-pinned-row {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--vscode-editor-background, #1f1f1f);
+    pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    will-change: transform;
+}
+
+.dbm-pinned-year {
+    z-index: 2;
+    height: 46px;
+}
+
+.dbm-pinned-month {
+    z-index: 1;
+    height: 30px;
+}
+
+.dbm-pinned-inner {
+    box-sizing: border-box;
+    display: flex;
+    align-items: baseline;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.dbm-pinned-year .dbm-pinned-inner {
+    gap: 14px;
+    font-size: 40px;
+    line-height: 46px;
+    letter-spacing: -0.025em;
+    font-weight: 650;
+    color: var(--dbm-strong);
+    font-variant-numeric: tabular-nums;
+}
+
+.dbm-pinned-month .dbm-pinned-inner {
+    gap: 10px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid var(--dbm-border);
+    font-size: 20px;
+    line-height: 26px;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    color: var(--dbm-strong);
+}
+
 /* ----- Day headers ----- */
 
 .dbm-root .cm-editor .cm-content .dbm-day-line {
-    padding: 12px 0 2px;
+    padding: 1px 0;
+}
+
+.dbm-root .cm-editor .cm-content .dbm-day-line.dbm-day-spaced {
+    padding-top: 10px;
 }
 
 .dbm-day {
@@ -372,7 +574,7 @@ body.vscode-high-contrast {
     gap: 8px;
     box-sizing: border-box;
     width: calc(100% - 2px);
-    height: 30px;
+    height: 26px;
     vertical-align: top;
     font-size: 13px;
     font-weight: 400;
@@ -466,7 +668,7 @@ body.vscode-high-contrast {
 .dbm-root .cm-editor .cm-content .dbm-blank {
     padding-top: 0;
     padding-bottom: 0;
-    line-height: 14px;
+    line-height: 10px;
 }
 
 .dbm-icon {
@@ -571,7 +773,7 @@ body.vscode-high-contrast {
 .dbm-badge {
     position: absolute;
     right: 0;
-    top: 4px;
+    top: 2px;
     height: 18px;
     padding: 0 6px;
     border-radius: 9px;
@@ -660,12 +862,20 @@ body.vscode-high-contrast {
 
 /* ----- Search panel ----- */
 
+/* Top panels: the Daily Log toolbar, then the search panel. Each panel draws its own background. */
 .dbm-root .cm-editor .cm-panels {
-    background: var(--vscode-editorWidget-background, #202020);
-    color: var(--vscode-editorWidget-foreground, var(--dbm-fg));
+    background: transparent;
+    color: var(--dbm-fg);
 }
 
 .dbm-root .cm-editor .cm-panels.cm-panels-top {
+    border-bottom: none;
+}
+
+.dbm-root .cm-editor .cm-panel.cm-search {
+    position: relative;
+    background: var(--vscode-editorWidget-background, #202020);
+    color: var(--vscode-editorWidget-foreground, var(--dbm-fg));
     border-bottom: 1px solid var(--vscode-editorWidget-border, var(--vscode-widget-border, #454545));
     box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
 }
@@ -682,9 +892,8 @@ body.vscode-high-contrast {
     align-items: center;
     gap: 4px 6px;
     box-sizing: border-box;
-    max-width: 816px;
-    margin: 0 auto;
-    padding: 6px 40px 6px 56px;
+    /* Full width, with the contents lined up with the centered text column */
+    padding: 6px max(40px, calc((100% - 736px) / 2)) 6px max(56px, calc((100% - 704px) / 2));
     font: 12px/18px var(--vscode-font-family, system-ui);
 }
 
@@ -791,7 +1000,8 @@ body.vscode-high-contrast .dbm-picker-item.dbm-focused {
     outline: 1px solid var(--vscode-contrastActiveBorder, var(--dbm-focus));
 }
 
-body.vscode-reduce-motion *,
+/* Reduced motion stops animations, except the cursor's blinking (VS Code's own cursor keeps blinking too) */
+body.vscode-reduce-motion *:not(.dbm-caret),
 body.vscode-reduce-motion *::before,
 body.vscode-reduce-motion *::after {
     animation: none !important;
@@ -799,7 +1009,7 @@ body.vscode-reduce-motion *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    *,
+    *:not(.dbm-caret),
     *::before,
     *::after {
         animation: none !important;
