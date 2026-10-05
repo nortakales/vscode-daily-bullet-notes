@@ -19,7 +19,7 @@ interface Row {
     dom: HTMLElement;
     inner: HTMLElement;
     title: HTMLElement;
-    meta?: HTMLElement;
+    meta: HTMLElement;
     box?: BoxSection;
 }
 
@@ -38,8 +38,8 @@ class PinnedHeaders implements PluginValue {
         this.dom = document.createElement('div');
         this.dom.className = 'dbm-pinned';
         this.dom.setAttribute('aria-hidden', 'true');
-        this.year = this.row('dbm-pinned-year', false);
-        this.month = this.row('dbm-pinned-month', true);
+        this.year = this.row('dbm-pinned-year');
+        this.month = this.row('dbm-pinned-month');
         view.dom.appendChild(this.dom);
         view.scrollDOM.addEventListener('scroll', this.onScroll, { passive: true });
         this.observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(() => this.measure());
@@ -48,7 +48,7 @@ class PinnedHeaders implements PluginValue {
         this.measure();
     }
 
-    private row(className: string, withMeta: boolean): Row {
+    private row(className: string): Row {
         const dom = document.createElement('div');
         dom.className = `dbm-pinned-row ${className}`;
         const inner = document.createElement('div');
@@ -56,12 +56,11 @@ class PinnedHeaders implements PluginValue {
         const title = document.createElement('span');
         title.className = 'dbm-pinned-title';
         inner.appendChild(title);
-        let meta: HTMLElement | undefined;
-        if (withMeta) {
-            meta = document.createElement('span');
-            meta.className = 'dbm-meta';
-            inner.appendChild(meta);
-        }
+        // The day count, shown like on the real header: only when the year or month is folded
+        const meta = document.createElement('span');
+        meta.className = 'dbm-meta';
+        meta.hidden = true;
+        inner.appendChild(meta);
         dom.appendChild(inner);
         this.dom.appendChild(dom);
         const row: Row = { dom, inner, title, meta };
@@ -158,11 +157,11 @@ class PinnedHeaders implements PluginValue {
         if (row.title.textContent !== box.title) {
             row.title.textContent = box.title;
         }
-        if (row.meta) {
-            const meta = `${box.dayCount} day${box.dayCount === 1 ? '' : 's'}`;
-            if (row.meta.textContent !== meta) {
-                row.meta.textContent = meta;
-            }
+        // A folded header can be pinned while the next header pushes it up
+        const meta = this.view.state.field(foldField).has(box.key) ? `${box.dayCount} day${box.dayCount === 1 ? '' : 's'}` : '';
+        if (row.meta.textContent !== meta) {
+            row.meta.textContent = meta;
+            row.meta.hidden = !meta;
         }
     }
 

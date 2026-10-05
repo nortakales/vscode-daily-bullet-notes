@@ -146,7 +146,8 @@ class BoxWidget extends WidgetType {
 
 function boxProps(box: BoxSection, folded: boolean, spaced: boolean): BoxProps {
     let meta = '';
-    if (box.kind === 'month' && !folded) {
+    if ((box.kind === 'year' || box.kind === 'month') && folded) {
+        // Only when folded: an open year or month shows its days
         meta = plural(box.dayCount, 'day');
     } else if (box.kind === 'list') {
         meta = String(box.itemCount);

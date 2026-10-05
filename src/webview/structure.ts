@@ -27,7 +27,8 @@ const WEEKDAY_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'F
 
 export type StatusKind = StatusKey | 'unknown';
 
-export const STATUS_ORDER: readonly StatusKey[] = ['open', 'done', 'progress', 'blocked', 'removed', 'tomorrow'];
+/** The order of the status picker's items */
+export const STATUS_ORDER: readonly StatusKey[] = ['open', 'progress', 'done', 'blocked', 'removed', 'tomorrow'];
 
 export const STATUS_INFO: Readonly<Record<StatusKey, { label: string; char: string; hint: string }>> = {
     open: { label: 'Open', char: ' ', hint: 'Space' },

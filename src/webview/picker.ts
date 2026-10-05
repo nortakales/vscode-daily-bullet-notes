@@ -1,5 +1,5 @@
 // The status picker: a small menu anchored to a task's icon (role="menu" with menuitemradio items).
-// Arrow keys, Home/End, Enter and Escape navigate; the status characters (Space x + / - >) pick directly.
+// Arrow keys, Home/End, Enter and Escape navigate; the status characters (Space + x / - >) pick directly.
 
 import type { StatusKey } from '../rendered/protocol';
 import { statusIconSvg, UI_ICONS } from './icons';

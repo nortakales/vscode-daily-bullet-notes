@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.1.1 - 2026-10-05
+
+* Rendered view: day headers use your theme's cyan, and year and month headers its magenta
+* Rendered view: the status menu is now ordered Open, In progress, Done, Blocked, Removed, Tomorrow
+* Rendered view: the `Today` badge is red (your theme's red) with white text
+* Rendered view: open months no longer show their number of days; folded months and years do
+
 ## 1.1.0 - 2026-10-05
 
 * Parent task statuses now also update automatically in the lists after the daily log, in both the text and rendered views

@@ -91,7 +91,7 @@ The rendered view shows your file as a journal: years and months become headings
 
 ## Customizing Colors
 
-Every task status and header has its own syntax scope, so themes, or you with `editor.tokenColorCustomizations`, can color each one individually. The colors apply to both the text view and the rendered view. Themes that don't know about these scopes color them like the common scope they start with (for example `keyword` for complete tasks).
+Every task status and header has its own syntax scope, so themes, or you with `editor.tokenColorCustomizations`, can color each one individually. Status colors apply to both the text view and the rendered view. Themes that don't know about these scopes color them like the common scope they start with (for example `keyword` for complete tasks).
 
 | Element                          | Scope                                                     |
 | -------------------------------- | --------------------------------------------------------- |
@@ -114,6 +114,8 @@ For example, in your `settings.json`:
     ]
 }
 ```
+
+In the rendered view, day headers use your theme's terminal cyan, year and month headers its terminal magenta, and the `Today` badge its terminal red (`terminal.ansiBrightCyan`, `terminal.ansiBrightMagenta` and `terminal.ansiBrightRed`).
 
 ## Commands
 

@@ -8,6 +8,11 @@
     --dbm-status-blocked: var(--vscode-charts-orange, #d18616);
     --dbm-status-removed: var(--vscode-charts-blue, #3794ff);
     --dbm-status-tomorrow: var(--vscode-charts-yellow, #cca700);
+    /* Header colors: the theme's terminal cyan for days, magenta for years and months */
+    --dbm-day-heading: var(--vscode-terminal-ansiBrightCyan, #29b8db);
+    --dbm-year-month-heading: var(--vscode-terminal-ansiBrightMagenta, #d670d6);
+    /* The Today badge: the theme's terminal red */
+    --dbm-today: var(--vscode-terminal-ansiBrightRed, #f14c4c);
 }
 
 html,
@@ -428,7 +433,7 @@ body.vscode-high-contrast .dbm-logbar {
     line-height: 46px;
     letter-spacing: -0.025em;
     font-weight: 650;
-    color: var(--dbm-strong);
+    color: var(--dbm-year-month-heading);
     font-variant-numeric: tabular-nums;
 }
 
@@ -447,7 +452,7 @@ body.vscode-high-contrast .dbm-logbar {
     line-height: 26px;
     letter-spacing: -0.01em;
     font-weight: 600;
-    color: var(--dbm-strong);
+    color: var(--dbm-year-month-heading);
 }
 
 .dbm-month .dbm-header .dbm-chev {
@@ -542,7 +547,7 @@ body.vscode-high-contrast .dbm-logbar {
     line-height: 46px;
     letter-spacing: -0.025em;
     font-weight: 650;
-    color: var(--dbm-strong);
+    color: var(--dbm-year-month-heading);
     font-variant-numeric: tabular-nums;
 }
 
@@ -554,7 +559,7 @@ body.vscode-high-contrast .dbm-logbar {
     line-height: 26px;
     letter-spacing: -0.01em;
     font-weight: 600;
-    color: var(--dbm-strong);
+    color: var(--dbm-year-month-heading);
 }
 
 /* ----- Day headers ----- */
@@ -586,12 +591,12 @@ body.vscode-high-contrast .dbm-logbar {
     white-space: nowrap;
 }
 
-.dbm-day b {
-    font-weight: 600;
+.dbm-day-date {
+    color: var(--dbm-day-heading);
 }
 
-.dbm-day .dbm-wd {
-    color: var(--dbm-muted);
+.dbm-day b {
+    font-weight: 600;
 }
 
 .dbm-day.dbm-folded {
@@ -616,8 +621,8 @@ body.vscode-high-contrast .dbm-logbar {
     padding: 0 7px;
     border-radius: 8px;
     font: 600 11px/16px var(--vscode-font-family, system-ui);
-    background: var(--vscode-activityBarBadge-background, var(--vscode-badge-background, #0078d4));
-    color: var(--vscode-activityBarBadge-foreground, var(--vscode-badge-foreground, #ffffff));
+    background: var(--dbm-today);
+    color: #ffffff;
 }
 
 .dbm-daysum {
