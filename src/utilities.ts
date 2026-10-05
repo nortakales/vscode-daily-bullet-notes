@@ -58,18 +58,12 @@ export function moveCursorUpNLines(n: number) {
 
 }
 
-export function getMostRecentDayContent(dbmDoc: DailyBulletNotesDocument): string | undefined {
+export function getMostRecentDayContent(dbmDoc: DailyBulletNotesDocument, document: vscode.TextDocument): string | undefined {
     const dailySection = dbmDoc.dailyLog?.mostRecentDay;
     if (!dailySection) {
         return undefined;
     }
 
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-        console.log("Could not detect editor");
-        return undefined;
-    }
-    const document = editor.document;
     const startPosition = new vscode.Position(dailySection.range.start + 1, 0);
     const endPosition = new vscode.Position(dailySection.range.end + 1, 0);
 

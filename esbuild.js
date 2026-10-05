@@ -24,6 +24,23 @@ const esbuildProblemMatcherPlugin = {
 };
 
 async function main() {
+	const webviewCtx = await esbuild.context({
+		entryPoints: [
+			'src/webview/main.ts'
+		],
+		bundle: true,
+		format: 'iife',
+		minify: production,
+		sourcemap: !production,
+		sourcesContent: false,
+		platform: 'browser',
+		target: 'es2022',
+		outfile: 'dist/webview.js',
+		logLevel: 'silent',
+		plugins: [
+			esbuildProblemMatcherPlugin,
+		],
+	});
 	const ctx = await esbuild.context({
 		entryPoints: [
 			'src/extension.ts'
@@ -44,9 +61,12 @@ async function main() {
 	});
 	if (watch) {
 		await ctx.watch();
+		await webviewCtx.watch();
 	} else {
 		await ctx.rebuild();
 		await ctx.dispose();
+		await webviewCtx.rebuild();
+		await webviewCtx.dispose();
 	}
 }
 

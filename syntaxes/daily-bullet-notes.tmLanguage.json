@@ -5,47 +5,47 @@
 	"patterns": [
 		{
 			"comment": "Box header horizontal lines",
-			"name": "constant.character",
+			"name": "constant.character.box-header.daily-bullet-notes",
 			"match": "^\\+\\-{20,100}\\+$"
 		},
 		{
 			"comment": "Box header title and vertical lines",
-			"name": "constant.character",
+			"name": "constant.character.box-header.daily-bullet-notes",
 			"match": "^\\|\\s+([\\w\\s]+)\\|$"
 		},
 		{
 			"comment": "Daily headers",
-			"name": "entity.name.function",
+			"name": "entity.name.function.day-header.daily-bullet-notes",
 			"match": "^\\d{1,2}(/\\d{1,2})? \\-{20,100}( < Today)?$"
 		},
 		{
 			"comment": "Empty Checkbox",
-			"name": "support.function",
+			"name": "support.function.status-open.daily-bullet-notes",
 			"match": "\\[\\s?\\]"
 		},
 		{
 			"comment": "Completed Checkbox",
-			"name": "keyword",
+			"name": "keyword.status-done.daily-bullet-notes",
 			"match": "\\[[xX]\\]"
 		},
 		{
 			"comment": "Progress Checkbox",
-			"name": "constant.character",
+			"name": "constant.character.status-progress.daily-bullet-notes",
 			"match": "\\[\\+\\]"
 		},
 		{
 			"comment": "Cancelled Checkbox",
-			"name": "entity.name.class",
+			"name": "entity.name.class.status-removed.daily-bullet-notes",
 			"match": "\\[\\-\\]"
 		},
 		{
 			"comment": "Blocked Checkbox",
-			"name": "string",
+			"name": "string.status-blocked.daily-bullet-notes",
 			"match": "\\[/\\]"
 		},
 		{
 			"comment": "Scheduled Checkbox",
-			"name": "constant.numeric",
+			"name": "constant.numeric.status-tomorrow.daily-bullet-notes",
 			"match": "\\[>\\]"
 		}
 	]

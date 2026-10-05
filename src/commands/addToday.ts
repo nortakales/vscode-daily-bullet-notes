@@ -4,6 +4,8 @@ import { getBoxHeader, getDailyHeader, getStringFromMonth } from '../strings';
 import { getMostRecentDayContent, getTabSize, moveCursorUpNLines } from '../utilities';
 import { carryOverDayContent } from '../taskLogic';
 import { getMostRecentDayOrShowError } from '../dailyLogCheck';
+import { getActiveDbmTarget } from '../rendered/viewSwitching';
+import { getRenderedViewProvider } from '../rendered/renderedViewProvider';
 
 /**
  * @returns false if today could not be added or found
@@ -14,12 +16,14 @@ export async function addToday(): Promise<boolean> {
     // so if there are future years/months then "today" will not be in the
     // correct location
 
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
+    const target = getActiveDbmTarget();
+    if (!target) {
         console.log("Could not detect editor");
         return false;
     }
-    const parser = new Parser(editor.document);
+    const document = target.document;
+    await getRenderedViewProvider()?.flush(document);
+    const parser = new Parser(document);
     const doc = parser.parseDocument();
 
     const date = new Date();
@@ -30,7 +34,7 @@ export async function addToday(): Promise<boolean> {
 
     let edits = [];
 
-    const mostRecentDay = getMostRecentDayOrShowError(editor.document, doc, "Add Today");
+    const mostRecentDay = getMostRecentDayOrShowError(document, doc, "Add Today");
     if (!mostRecentDay) {
         return false;
     } else {
@@ -40,10 +44,15 @@ export async function addToday(): Promise<boolean> {
 
         if (mostRecentYear === year && mostRecentMonth === month && mostRecentDay.day === day) {
 
-            const startPosition = new vscode.Position(mostRecentDay.range.start, 0);
-            const endPosition = new vscode.Position(mostRecentDay.range.end, 0);
-            editor.selection = new vscode.Selection(endPosition, endPosition);
-            editor.revealRange(new vscode.Range(startPosition, endPosition), vscode.TextEditorRevealType.InCenter);
+            if (target.kind === 'rendered') {
+                getRenderedViewProvider()?.reveal(document, { line: mostRecentDay.range.end, atEnd: true });
+            } else {
+                const editor = target.editor;
+                const startPosition = new vscode.Position(mostRecentDay.range.start, 0);
+                const endPosition = new vscode.Position(mostRecentDay.range.end, 0);
+                editor.selection = new vscode.Selection(endPosition, endPosition);
+                editor.revealRange(new vscode.Range(startPosition, endPosition), vscode.TextEditorRevealType.InCenter);
+            }
             vscode.window.showInformationMessage("Today already exists");
             return true;
         }
@@ -58,8 +67,22 @@ export async function addToday(): Promise<boolean> {
         }
 
         edits.push(getDailyHeader(month, day),);
-        edits.push(carryOverDayContent(getMostRecentDayContent(doc) ?? '', getTabSize(editor.document)));
+        edits.push(carryOverDayContent(getMostRecentDayContent(doc, document) ?? '', getTabSize(document)));
 
+        if (target.kind === 'rendered') {
+            const lineToInsertOn = mostRecentDay.range.end;
+            const endOfLine = document.lineAt(lineToInsertOn).range.end.character;
+            const newText = edits.join("\n");
+            const edit = new vscode.WorkspaceEdit();
+            edit.insert(document.uri, new vscode.Position(lineToInsertOn, endOfLine), "\n" + newText + "\n");
+            if (!await vscode.workspace.applyEdit(edit)) {
+                return false;
+            }
+            // Same place the text editor puts the cursor: the last line carried over to today
+            getRenderedViewProvider()?.reveal(document, { line: lineToInsertOn + newText.split("\n").length, atEnd: true });
+            return true;
+        }
+        const editor = target.editor;
 
         // Set cursor just after the last month (it will be moved up later)
         const newCursorPosition = new vscode.Position(mostRecentDay!.range.end + 1, 0);

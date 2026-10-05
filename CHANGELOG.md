@@ -1,5 +1,16 @@
 # Change Log
 
+## 1.0.0 - 2026-10-05
+
+* Added a rendered view: the same `.dbm` file shown as a journal, with rendered year/month/day headers, colored status icons using your theme's colors, folding with day summaries, and full editing. Everything you type is saved to the file just as if you had typed it in the text view
+* The rendered view shows `- `, `* ` and `1. ` lines as bullets and numbered lists, and markdown links as links (`Ctrl+Click` to open). Pasting a URL onto selected text makes it a link
+* New `Rendered View: Centered Layout` setting; turn it off to use the full width of the editor
+* Typing in the rendered view is grouped into bursts, so undo removes a burst of typing at once instead of one character at a time
+* Switch between the text and rendered views with the new editor title bar button, and choose which one opens `.dbm` files with the new `Default View` setting
+* `Add Today`, `Standup View` and `Add New List` work in the rendered view
+* Each task status and header now has its own syntax scope, so themes and `editor.tokenColorCustomizations` can color them individually (colors are unchanged unless you customize them; see the README)
+* The extension now prefers to run locally when VS Code is connected to WSL, SSH or a container, so the rendered view can use your theme's colors
+
 ## 0.3.0 - 2026-10-04
 
 * Fixed parent task being marked complete `[x]` or removed `[-]` when a sub-task was planned for tomorrow `[>]`, which also orphaned that sub-task on the next day

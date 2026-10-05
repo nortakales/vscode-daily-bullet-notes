@@ -25,11 +25,15 @@
     "lists",
     "todo list"
   ],
-  "version": "0.3.0",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.95.0"
   },
   "activationEvents": [],
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
   "main": "./dist/extension.js",
   "browser": "./dist/extension.js",
   "contributes": {
@@ -58,6 +62,35 @@
         "command": "daily-bullet-notes.newFile",
         "title": "Initialize New DBM File",
         "icon": "$(new-file)"
+      },
+      {
+        "command": "daily-bullet-notes.openRenderedView",
+        "title": "Open Rendered View",
+        "category": "Daily Bullet Notes",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "daily-bullet-notes.openTextView",
+        "title": "Open Text View",
+        "category": "Daily Bullet Notes",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "daily-bullet-notes.renderedView.find",
+        "title": "Find in Rendered View",
+        "category": "Daily Bullet Notes"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "daily-bullet-notes.renderedView",
+        "displayName": "Daily Bullet Notes (Rendered)",
+        "selector": [
+          {
+            "filenamePattern": "*.dbm"
+          }
+        ],
+        "priority": "option"
       }
     ],
     "configuration": {
@@ -68,6 +101,26 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Update all task statuses automatically based on sub-tasks. *Note: this will happen only within the particular day you are editing, not the entire document.*"
+        },
+        "daily-bullet-notes.defaultView": {
+          "title": "Default View",
+          "type": "string",
+          "enum": [
+            "text",
+            "rendered"
+          ],
+          "enumDescriptions": [
+            "Open .dbm files in the text editor",
+            "Open .dbm files in the rendered view"
+          ],
+          "default": "text",
+          "markdownDescription": "Which view opens `.dbm` files. You can switch views at any time with the button in the editor title bar. Changing this updates the `workbench.editorAssociations` setting for `*.dbm` files."
+        },
+        "daily-bullet-notes.renderedView.centeredLayout": {
+          "title": "Rendered View: Centered Layout",
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Show the rendered view as a centered column of limited width. Turn this off to use the full width of the editor."
         }
       }
     },
@@ -93,6 +146,16 @@
     "menus": {
       "editor/title": [
         {
+          "command": "daily-bullet-notes.openRenderedView",
+          "when": "editorLangId == daily-bullet-notes",
+          "group": "navigation"
+        },
+        {
+          "command": "daily-bullet-notes.openTextView",
+          "when": "activeCustomEditorId == daily-bullet-notes.renderedView",
+          "group": "navigation"
+        },
+        {
           "submenu": "daily-bullet-notes.main",
           "group": "navigation"
         }
@@ -106,26 +169,75 @@
       "daily-bullet-notes.main": [
         {
           "command": "daily-bullet-notes.addTodayAndStandupView",
-          "when": "editorLangId == daily-bullet-notes"
+          "when": "editorLangId == daily-bullet-notes || activeCustomEditorId == daily-bullet-notes.renderedView"
         },
         {
           "command": "daily-bullet-notes.addToday",
-          "when": "editorLangId == daily-bullet-notes"
+          "when": "editorLangId == daily-bullet-notes || activeCustomEditorId == daily-bullet-notes.renderedView"
         },
         {
           "command": "daily-bullet-notes.addNewList",
-          "when": "editorLangId == daily-bullet-notes"
+          "when": "editorLangId == daily-bullet-notes || activeCustomEditorId == daily-bullet-notes.renderedView"
         },
         {
           "command": "daily-bullet-notes.standupView",
-          "when": "editorLangId == daily-bullet-notes"
+          "when": "editorLangId == daily-bullet-notes || activeCustomEditorId == daily-bullet-notes.renderedView"
         },
         {
           "command": "daily-bullet-notes.newFile",
+          "when": "editorLangId == daily-bullet-notes || activeCustomEditorId == daily-bullet-notes.renderedView"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "daily-bullet-notes.addTodayAndStandupView",
+          "when": "webviewId == 'daily-bullet-notes.renderedView'",
+          "group": "1_dbm@1"
+        },
+        {
+          "command": "daily-bullet-notes.addToday",
+          "when": "webviewId == 'daily-bullet-notes.renderedView'",
+          "group": "1_dbm@2"
+        },
+        {
+          "command": "daily-bullet-notes.addNewList",
+          "when": "webviewId == 'daily-bullet-notes.renderedView'",
+          "group": "1_dbm@3"
+        },
+        {
+          "command": "daily-bullet-notes.standupView",
+          "when": "webviewId == 'daily-bullet-notes.renderedView'",
+          "group": "1_dbm@4"
+        },
+        {
+          "command": "daily-bullet-notes.openTextView",
+          "when": "webviewId == 'daily-bullet-notes.renderedView'",
+          "group": "2_view@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "daily-bullet-notes.openRenderedView",
           "when": "editorLangId == daily-bullet-notes"
+        },
+        {
+          "command": "daily-bullet-notes.openTextView",
+          "when": "activeCustomEditorId == daily-bullet-notes.renderedView"
+        },
+        {
+          "command": "daily-bullet-notes.renderedView.find",
+          "when": "false"
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "daily-bullet-notes.renderedView.find",
+        "key": "ctrl+f",
+        "mac": "cmd+f",
+        "when": "activeCustomEditorId == daily-bullet-notes.renderedView"
+      }
+    ],
     "submenus": [
       {
         "id": "daily-bullet-notes.main",
@@ -144,21 +256,26 @@
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc --noEmit && tsc --noEmit -p tsconfig.webview.json",
     "lint": "eslint src",
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.95.0",
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/search": "^6.7.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.13",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
+    "@types/vscode": "^1.95.0",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",
-    "eslint": "^9.35.0",
-    "esbuild": "^0.25.9",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^5.9.2",
     "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.25.9",
+    "eslint": "^9.35.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.2"
   }
 }

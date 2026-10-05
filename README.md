@@ -70,6 +70,48 @@ The main benefits of this method to me are:
 1. **Syntax highlighting** - year/month/day headers, list headers and task boxes are all colored
 2. **Folding (collapsing)** - fold years/months/days and lists
 3. **Commands** - a bunch of built in commands to help manage your tasks/notes
+4. **Rendered view** - an optional view of the same file with nicely rendered year/month/day headers and colored status icons, which you can edit just like the text (see below)
+
+## Rendered View
+
+The rendered view shows your file as a journal: years and months become headings, each day shows its weekday (and a `Today` badge), and every task box becomes a status icon in the same color your theme gives it in the text view. It is just another way of looking at the same `.dbm` file, so everything you type is saved to that file exactly as if you had typed it in the text view, and save, undo/redo and git all work as usual.
+
+* Switch between the text view and the rendered view at any time with the button in the editor title bar (or `Open Rendered View` / `Open Text View` from the command palette)
+* Choose which view opens `.dbm` files with the `Default View` setting
+* Click a task's status icon to change its status (or press `Ctrl+Enter` / `Cmd+Enter` on the task). Parent tasks don't have a picker; their status comes from their sub-tasks, just like in the text view
+* `Enter` starts a new task, `Tab`/`Shift+Tab` indent and un-indent, and `Backspace` at the start of a task turns it into a note
+* Click a year, month or day to fold it. Folded days show a summary of their tasks
+* `Add Today`, `Standup View` and `Add New List` work in the rendered view too, and are also in its right-click menu
+* `Ctrl+F` / `Cmd+F` searches the file
+* Lines starting with `- `, `* ` or `1. ` show as bullets and numbered lists, like markdown. `Enter` continues the list
+* Markdown links like `[text](https://example.com)` show as links; `Ctrl+Click` / `Cmd+Click` opens them. Select some text and paste a URL to turn it into a link
+* The rendered view is a centered column by default; turn off the `Rendered View: Centered Layout` setting to use the full width of the editor
+
+## Customizing Colors
+
+Every task status and header has its own syntax scope, so themes, or you with `editor.tokenColorCustomizations`, can color each one individually. The colors apply to both the text view and the rendered view. Themes that don't know about these scopes color them like the common scope they start with (for example `keyword` for complete tasks).
+
+| Element                          | Scope                                                     |
+| -------------------------------- | --------------------------------------------------------- |
+| `[ ]` / `[]` open                | `support.function.status-open.daily-bullet-notes`         |
+| `[x]` complete                   | `keyword.status-done.daily-bullet-notes`                  |
+| `[+]` progress                   | `constant.character.status-progress.daily-bullet-notes`   |
+| `[/]` blocked                    | `string.status-blocked.daily-bullet-notes`                |
+| `[-]` removed                    | `entity.name.class.status-removed.daily-bullet-notes`     |
+| `[>]` tomorrow                   | `constant.numeric.status-tomorrow.daily-bullet-notes`     |
+| Year, month and list box headers | `constant.character.box-header.daily-bullet-notes`        |
+| Day headers                      | `entity.name.function.day-header.daily-bullet-notes`      |
+
+For example, in your `settings.json`:
+
+```json
+"editor.tokenColorCustomizations": {
+    "textMateRules": [
+        { "scope": "keyword.status-done.daily-bullet-notes", "settings": { "foreground": "#3fb950" } },
+        { "scope": "string.status-blocked.daily-bullet-notes", "settings": { "foreground": "#f0883e" } }
+    ]
+}
+```
 
 ## Commands
 
@@ -80,12 +122,16 @@ The main benefits of this method to me are:
 | Standup View             | `daily-bullet-notes.standupView`            | Collapses the entire document except for the two most recent days (usually this would be today and yesterday).                                                                                           |
 | Add New List             | `daily-bullet-notes.addNewList`             | Shortcut for adding a new list at the bottom of your document with a nicely formatted header box.                                                                                                        |
 | Initialize New DBM File  | `daily-bullet-notes.newFile`                | Opens a new file with everything needed for today (`Daily Log`, year, month and today's headers), with today pre-populated with an example of each type of task and an example list.                     |
+| Open Rendered View       | `daily-bullet-notes.openRenderedView`       | Switches the current `.dbm` file from the text view to the rendered view.                                                                                                                                |
+| Open Text View           | `daily-bullet-notes.openTextView`           | Switches the current `.dbm` file from the rendered view back to the text view.                                                                                                                           |
 
 ## Settings
 
 | Setting                  | Key                                         | Default | Description                                                                                                                                                  |
 | ------------------------ | ------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Automatic Status Updates | `daily-bullet-notes.automaticStatusUpdates` | `true`  | Update all task statuses automatically based on sub-tasks. *Note: this will happen only within the particular day you are editing, not the entire document.* |
+| Rendered View: Centered Layout | `daily-bullet-notes.renderedView.centeredLayout` | `true` | Show the rendered view as a centered column of limited width. Turn off to use the full width of the editor. |
+| Default View             | `daily-bullet-notes.defaultView`            | `text`  | Which view opens `.dbm` files: `text` or `rendered`. You can always switch with the button in the editor title bar. Changing it updates the `workbench.editorAssociations` setting for `*.dbm` files. |
 
 ## Release Notes
 

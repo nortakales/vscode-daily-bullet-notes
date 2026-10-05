@@ -1,15 +1,25 @@
 import * as vscode from 'vscode';
 import Parser from '../documentParser';
 import { getMostRecentDayOrShowError } from '../dailyLogCheck';
+import { getActiveDbmTarget } from '../rendered/viewSwitching';
+import { getRenderedViewProvider } from '../rendered/renderedViewProvider';
 
 
 
 export async function standupView() {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
+    const target = getActiveDbmTarget();
+    if (!target) {
         console.log("Could not detect editor");
         return;
     }
+    if (target.kind === 'rendered') {
+        const dbmDoc = new Parser(target.document).parseDocument();
+        if (getMostRecentDayOrShowError(target.document, dbmDoc, "Standup View")) {
+            getRenderedViewProvider()?.runCommand(target.document, 'standupView');
+        }
+        return;
+    }
+    const editor = target.editor;
 
     const parser = new Parser(editor.document);
     const doc = parser.parseDocument();

@@ -2,11 +2,13 @@ import * as vscode from 'vscode';
 
 import Parser from '../documentParser';
 import { getBoxHeader } from '../strings';
+import { getActiveDbmTarget } from '../rendered/viewSwitching';
+import { getRenderedViewProvider } from '../rendered/renderedViewProvider';
 export async function addNewList() {
 
 
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
+    const target = getActiveDbmTarget();
+    if (!target) {
         console.log("Could not detect editor");
         return;
     }
@@ -32,6 +34,19 @@ export async function addNewList() {
     }
 
     const newListBox = getBoxHeader(newListTitle);
+
+    if (target.kind === 'rendered') {
+        const document = target.document;
+        await getRenderedViewProvider()?.flush(document);
+        const finalLine = document.lineAt(document.lineCount - 1);
+        const edit = new vscode.WorkspaceEdit();
+        edit.insert(document.uri, finalLine.range.end, `\n${newListBox}\n`);
+        if (await vscode.workspace.applyEdit(edit)) {
+            getRenderedViewProvider()?.reveal(document, { line: document.lineCount - 1 });
+        }
+        return;
+    }
+    const editor = target.editor;
 
     // TODO could use await
 

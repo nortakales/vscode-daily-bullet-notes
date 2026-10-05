@@ -3,6 +3,7 @@ import * as settings from './settings';
 import { applyEditsToDocument, DBM_LANGUAGE_ID, getDayFromLineNumber, getTabSize, parseCursorPositionForBox } from './utilities';
 import { computeCombinedStatus, computeParentStatusUpdates, getIndentLevel } from './taskLogic';
 import Parser from './documentParser';
+import { isRenderedViewEdit } from './rendered/renderedViewProvider';
 
 // TODO finalize a solution, and perhaps provide a setting to control it
 const fullUpdates = true;
@@ -30,6 +31,10 @@ export async function onDocumentChange(event: vscode.TextDocumentChangeEvent) {
         return;
     }
     if (applyingStatusUpdates) {
+        return;
+    }
+    // The rendered view applies its own smart edits and parent status updates as part of each edit
+    if (isRenderedViewEdit(event)) {
         return;
     }
     // Undo/redo restores earlier text, including any status updates made at the time,

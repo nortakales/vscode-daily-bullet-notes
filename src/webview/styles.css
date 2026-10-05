@@ -1,0 +1,808 @@
+/* Rendered view for .dbm files ("Journal document" design). Colors come from VS Code's theme variables. */
+
+:root {
+    /* Status colors: the host sets these from the theme's syntax colors; these are the fallbacks */
+    --dbm-status-open: var(--vscode-charts-red, #f14c4c);
+    --dbm-status-done: var(--vscode-charts-green, #89d185);
+    --dbm-status-progress: var(--vscode-charts-purple, #b180d7);
+    --dbm-status-blocked: var(--vscode-charts-orange, #d18616);
+    --dbm-status-removed: var(--vscode-charts-blue, #3794ff);
+    --dbm-status-tomorrow: var(--vscode-charts-yellow, #cca700);
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    overflow: hidden;
+    background: var(--vscode-editor-background, #1f1f1f);
+    color: var(--vscode-editor-foreground, #cccccc);
+}
+
+/* On body, so the status picker (outside the editor) gets them too */
+body {
+    --dbm-fg: var(--vscode-editor-foreground, #cccccc);
+    --dbm-bg: var(--vscode-editor-background, #1f1f1f);
+    --dbm-muted: var(--vscode-descriptionForeground, #9d9d9d);
+    --dbm-strong: color-mix(in srgb, var(--dbm-fg) 78%, #ffffff);
+    --dbm-border: var(--vscode-panel-border, var(--vscode-widget-border, rgba(128, 128, 128, 0.25)));
+    --dbm-guide: var(--vscode-editorIndentGuide-background1, var(--vscode-editorIndentGuide-background, rgba(128, 128, 128, 0.3)));
+    --dbm-hover: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+    --dbm-focus: var(--vscode-focusBorder, #0078d4);
+    --dbm-glyph: var(--vscode-editor-background, #1f1f1f);
+    --dbm-chip: var(--vscode-keybindingLabel-background, rgba(128, 128, 128, 0.17));
+    /* Width of one indentation level, and of the status icon column */
+    --dbm-step: 28px;
+}
+
+.dbm-root {
+    height: 100%;
+}
+
+body.vscode-light,
+body.vscode-high-contrast-light {
+    --dbm-strong: color-mix(in srgb, var(--dbm-fg) 70%, #000000);
+}
+
+body.vscode-high-contrast {
+    --dbm-strong: var(--dbm-fg);
+    --dbm-border: var(--vscode-contrastBorder, var(--dbm-fg));
+}
+
+/* ----- Editor frame ----- */
+
+.dbm-root .cm-editor {
+    height: 100%;
+    background: transparent;
+    color: var(--dbm-fg);
+    font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", system-ui, Ubuntu, sans-serif);
+    font-size: calc(var(--vscode-font-size, 13px) + 1px);
+}
+
+.dbm-root .cm-editor.cm-focused {
+    outline: none;
+}
+
+/* Horizontal room (for the fold chevrons) goes on the scroller: CodeMirror's selection layer assumes the
+   content has no horizontal padding */
+.dbm-root .cm-editor .cm-scroller {
+    box-sizing: border-box;
+    padding: 0 40px 0 56px;
+    font-family: inherit;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
+}
+
+.dbm-root .cm-editor .cm-content {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px 0 45vh;
+    caret-color: var(--vscode-editorCursor-foreground, var(--dbm-fg));
+}
+
+/* Full width (config.centered false): modest margins, still room on the left for the fold chevrons */
+.dbm-root .cm-editor.dbm-full-width .cm-scroller {
+    padding: 0 24px 0 48px;
+}
+
+.dbm-root .cm-editor.dbm-full-width .cm-content {
+    max-width: none;
+}
+
+.dbm-root .cm-editor .cm-content .cm-line {
+    padding: 3px 0;
+}
+
+.dbm-root .cm-editor .cm-cursor,
+.dbm-root .cm-editor .cm-dropCursor {
+    border-left: 2px solid var(--vscode-editorCursor-foreground, var(--dbm-fg));
+    margin-left: -1px;
+}
+
+.dbm-root .cm-editor .cm-selectionBackground {
+    background: var(--vscode-editor-inactiveSelectionBackground, rgba(128, 128, 128, 0.3)) !important;
+}
+
+.dbm-root .cm-editor.cm-focused .cm-selectionBackground {
+    background: var(--vscode-editor-selectionBackground, rgba(38, 79, 120, 0.7)) !important;
+}
+
+.dbm-root .cm-editor .cm-scroller::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+
+.dbm-root .cm-editor .cm-scroller::-webkit-scrollbar-thumb {
+    background: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+}
+
+.dbm-root .cm-editor .cm-scroller::-webkit-scrollbar-thumb:hover {
+    background: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7));
+}
+
+.dbm-root .cm-editor .cm-scroller::-webkit-scrollbar-thumb:active {
+    background: var(--vscode-scrollbarSlider-activeBackground, rgba(191, 191, 191, 0.4));
+}
+
+.dbm-root .cm-editor .cm-scroller::-webkit-scrollbar-track,
+.dbm-root .cm-editor .cm-scroller::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* ----- Shared bits ----- */
+
+.dbm-ui {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.dbm-ic {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    display: block;
+    overflow: visible;
+}
+
+.dbm-ic .s {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.25;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.dbm-ic .f {
+    fill: currentColor;
+}
+
+.dbm-ic .g {
+    fill: none;
+    stroke: var(--dbm-glyph);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* :root raises specificity above the all:unset reset of the icon buttons */
+:root .dbm-st-open { color: var(--dbm-status-open); }
+:root .dbm-st-done { color: var(--dbm-status-done); }
+:root .dbm-st-progress { color: var(--dbm-status-progress); }
+:root .dbm-st-blocked { color: var(--dbm-status-blocked); }
+:root .dbm-st-removed { color: var(--dbm-status-removed); }
+:root .dbm-st-tomorrow { color: var(--dbm-status-tomorrow); }
+:root .dbm-st-unknown { color: var(--dbm-muted); }
+
+.dbm-meta {
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0;
+    font-weight: 400;
+    color: var(--dbm-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.dbm-chev {
+    position: absolute;
+    left: -30px;
+    top: 50%;
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    display: grid;
+    place-items: center;
+    color: var(--dbm-muted);
+    opacity: 0;
+    transition: opacity 0.1s ease, transform 0.12s ease;
+}
+
+.dbm-folded .dbm-chev {
+    transform: rotate(-90deg);
+}
+
+.dbm-day:hover .dbm-chev,
+.dbm-header:hover .dbm-chev,
+.dbm-folded .dbm-chev {
+    opacity: 1;
+}
+
+.dbm-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ----- Box headers: Daily Log toolbar, years, months, lists ----- */
+
+.dbm-box {
+    display: flow-root;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.dbm-header {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.dbm-dailyLog {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 0 4px;
+    font-size: 13px;
+    color: var(--dbm-muted);
+}
+
+.dbm-log-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: auto;
+    font-weight: 600;
+    color: var(--dbm-fg);
+}
+
+.dbm-tool {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font: 12px/18px var(--vscode-font-family, system-ui);
+    color: var(--dbm-muted);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.dbm-tool:hover {
+    background: var(--dbm-hover);
+    color: var(--dbm-fg);
+}
+
+.dbm-tool:focus-visible {
+    outline: 1px solid var(--dbm-focus);
+    outline-offset: -1px;
+}
+
+.dbm-tool .dbm-ui {
+    width: 14px;
+    height: 14px;
+}
+
+.dbm-year {
+    padding: 22px 0 2px;
+}
+
+.dbm-year .dbm-header {
+    gap: 14px;
+    font-size: 40px;
+    line-height: 52px;
+    letter-spacing: -0.025em;
+    font-weight: 650;
+    color: var(--dbm-strong);
+    font-variant-numeric: tabular-nums;
+}
+
+.dbm-month {
+    padding: 18px 0 6px;
+}
+
+.dbm-month .dbm-header {
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--dbm-border);
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    color: var(--dbm-strong);
+}
+
+.dbm-month .dbm-header .dbm-chev {
+    margin-top: -13px;
+}
+
+.dbm-list {
+    padding-top: 10px;
+}
+
+.dbm-lists-heading {
+    margin: 34px 0 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--dbm-border);
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    color: var(--dbm-strong);
+}
+
+.dbm-list .dbm-header {
+    align-items: center;
+    gap: 8px;
+    height: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dbm-strong);
+}
+
+.dbm-list-icon {
+    display: inline-flex;
+    color: var(--dbm-muted);
+}
+
+.dbm-list.dbm-folded .dbm-header {
+    color: var(--dbm-fg);
+}
+
+/* ----- Day headers ----- */
+
+.dbm-root .cm-editor .cm-content .dbm-day-line {
+    padding: 12px 0 2px;
+}
+
+.dbm-day {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    width: calc(100% - 2px);
+    height: 30px;
+    vertical-align: top;
+    font-size: 13px;
+    font-weight: 400;
+    font-style: normal;
+    color: var(--dbm-strong);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    white-space: nowrap;
+}
+
+.dbm-day b {
+    font-weight: 600;
+}
+
+.dbm-day .dbm-wd {
+    color: var(--dbm-muted);
+}
+
+.dbm-day.dbm-folded {
+    color: var(--dbm-fg);
+}
+
+.dbm-rule {
+    flex: 1;
+    min-width: 12px;
+    height: 1px;
+    margin-left: 4px;
+    background: var(--dbm-border);
+}
+
+.dbm-day.dbm-folded .dbm-rule {
+    background: transparent;
+}
+
+.dbm-pill {
+    display: inline-block;
+    flex: none;
+    padding: 0 7px;
+    border-radius: 8px;
+    font: 600 11px/16px var(--vscode-font-family, system-ui);
+    background: var(--vscode-activityBarBadge-background, var(--vscode-badge-background, #0078d4));
+    color: var(--vscode-activityBarBadge-foreground, var(--vscode-badge-foreground, #ffffff));
+}
+
+.dbm-daysum {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+    font-size: 12px;
+    color: var(--dbm-muted);
+}
+
+.dbm-strip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.dbm-strip .dbm-ic {
+    width: 12px;
+    height: 12px;
+}
+
+.dbm-strip-more {
+    margin-left: 2px;
+    font-size: 11px;
+}
+
+/* ----- Tasks and notes ----- */
+
+/* Indentation: hidden whitespace plus padding, with indent guides drawn in the padding */
+.dbm-root .cm-editor .cm-content .dbm-line {
+    padding-left: calc((var(--dbm-indent, 0) + 1) * var(--dbm-step));
+}
+
+.dbm-root .cm-editor .cm-content .dbm-line[style] {
+    background-image: repeating-linear-gradient(to right, transparent 0 10.5px, var(--dbm-guide) 10.5px 11.5px, transparent 11.5px var(--dbm-step));
+    background-size: calc(var(--dbm-indent, 0) * var(--dbm-step)) 100%;
+    background-repeat: no-repeat;
+}
+
+/* Tasks and list items hang their icon or marker in the column before the text, so wrapped lines line up
+   with the text */
+.dbm-root .cm-editor .cm-content .dbm-task,
+.dbm-root .cm-editor .cm-content .dbm-list-item {
+    text-indent: calc(-1 * var(--dbm-step));
+}
+
+.dbm-root .cm-editor .cm-content .dbm-blank {
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 14px;
+}
+
+.dbm-icon {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin: -1px 6px -1px 0;
+    vertical-align: top;
+    border-radius: 4px;
+    text-indent: 0;
+    cursor: pointer;
+}
+
+.dbm-icon:hover {
+    background: var(--dbm-hover);
+}
+
+.dbm-icon.dbm-locked {
+    cursor: default;
+}
+
+.dbm-icon.dbm-locked:hover {
+    background: transparent;
+}
+
+.dbm-task-done {
+    color: var(--dbm-muted);
+}
+
+.dbm-task-removed {
+    color: var(--dbm-muted);
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--dbm-muted) 75%, transparent);
+}
+
+.dbm-task-tomorrow {
+    font-style: italic;
+}
+
+/* List markers sit in the checkbox column: bullets centered like the icons, numbers right-aligned */
+.dbm-marker {
+    display: inline-block;
+    box-sizing: border-box;
+    width: 22px;
+    margin-right: 6px;
+    vertical-align: top;
+    text-indent: 0;
+    font-style: normal;
+    color: var(--dbm-muted);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.dbm-marker-bullet {
+    text-align: center;
+    font-size: 1.15em;
+    line-height: 20px;
+}
+
+.dbm-marker-square {
+    font-size: 0.8em;
+}
+
+.dbm-marker-number {
+    text-align: right;
+    padding-right: 3px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Links */
+.dbm-link {
+    color: var(--vscode-textLink-foreground, #4daafc);
+    text-decoration: none;
+    border-radius: 2px;
+}
+
+.dbm-link:hover {
+    text-decoration: underline;
+}
+
+.dbm-mod-held .dbm-link {
+    cursor: pointer;
+}
+
+.dbm-mod-held .dbm-link:hover {
+    color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground, #4daafc));
+}
+
+.dbm-link-syntax {
+    color: var(--dbm-muted);
+}
+
+.dbm-root .cm-editor .cm-content .dbm-has-badge {
+    position: relative;
+    padding-right: 48px;
+}
+
+.dbm-badge {
+    position: absolute;
+    right: 0;
+    top: 4px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 9px;
+    background: var(--dbm-chip);
+    color: var(--dbm-muted);
+    font-size: 11px;
+    line-height: 18px;
+    font-style: normal;
+    text-indent: 0;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* ----- Status picker ----- */
+
+.dbm-picker {
+    position: fixed;
+    z-index: 200;
+    min-width: 228px;
+    padding: 4px;
+    box-sizing: border-box;
+    border-radius: 6px;
+    border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, #454545));
+    background: var(--vscode-menu-background, var(--vscode-editorWidget-background, #252526));
+    color: var(--vscode-menu-foreground, var(--vscode-editor-foreground, #cccccc));
+    box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+    font: 13px/1.4 var(--vscode-font-family, system-ui);
+    animation: dbm-pop 0.09s ease-out;
+}
+
+.dbm-picker[hidden] {
+    display: none;
+}
+
+@keyframes dbm-pop {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: none; }
+}
+
+.dbm-picker-item {
+    display: grid;
+    grid-template-columns: 14px 16px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    height: 26px;
+    padding: 0 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+}
+
+.dbm-picker-item.dbm-focused {
+    background: var(--vscode-list-activeSelectionBackground, var(--vscode-list-hoverBackground, #04395e));
+    color: var(--vscode-list-activeSelectionForeground, inherit);
+    box-shadow: inset 0 0 0 1px var(--dbm-focus, var(--vscode-focusBorder, #0078d4));
+}
+
+.dbm-picker-check {
+    display: flex;
+    opacity: 0;
+}
+
+.dbm-picker-check .dbm-ui {
+    width: 14px;
+    height: 14px;
+}
+
+.dbm-picker-item[aria-checked="true"] .dbm-picker-check {
+    opacity: 1;
+}
+
+.dbm-picker kbd {
+    min-width: 18px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    border-radius: 3px;
+    text-align: center;
+    font: 11px/16px var(--vscode-font-family, system-ui);
+    background: var(--vscode-keybindingLabel-background, rgba(128, 128, 128, 0.17));
+    color: var(--vscode-keybindingLabel-foreground, inherit);
+    border: 1px solid var(--vscode-keybindingLabel-border, rgba(51, 51, 51, 0.6));
+    border-bottom-color: var(--vscode-keybindingLabel-bottomBorder, rgba(68, 68, 68, 0.6));
+    box-shadow: inset 0 -1px 0 var(--vscode-keybindingLabel-bottomBorder, rgba(68, 68, 68, 0.6));
+}
+
+/* ----- Search panel ----- */
+
+.dbm-root .cm-editor .cm-panels {
+    background: var(--vscode-editorWidget-background, #202020);
+    color: var(--vscode-editorWidget-foreground, var(--dbm-fg));
+}
+
+.dbm-root .cm-editor .cm-panels.cm-panels-top {
+    border-bottom: 1px solid var(--vscode-editorWidget-border, var(--vscode-widget-border, #454545));
+    box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+}
+
+.dbm-root .cm-editor.dbm-full-width .cm-search {
+    max-width: none;
+    padding-right: 24px;
+    padding-left: 48px;
+}
+
+.dbm-root .cm-editor .cm-search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    box-sizing: border-box;
+    max-width: 816px;
+    margin: 0 auto;
+    padding: 6px 40px 6px 56px;
+    font: 12px/18px var(--vscode-font-family, system-ui);
+}
+
+.dbm-root .cm-editor .cm-search br {
+    flex-basis: 100%;
+    height: 0;
+}
+
+.dbm-root .cm-editor .cm-textfield {
+    min-width: 200px;
+    margin: 0;
+    padding: 2px 6px;
+    border: 1px solid var(--vscode-input-border, transparent);
+    border-radius: 2px;
+    outline: none;
+    background: var(--vscode-input-background, #313131);
+    color: var(--vscode-input-foreground, var(--dbm-fg));
+    font: 13px/18px var(--vscode-font-family, system-ui);
+}
+
+.dbm-root .cm-editor .cm-textfield:focus {
+    border-color: var(--dbm-focus);
+}
+
+.dbm-root .cm-editor .cm-textfield::placeholder {
+    color: var(--vscode-input-placeholderForeground, var(--dbm-muted));
+}
+
+.dbm-root .cm-editor .cm-button {
+    margin: 0;
+    padding: 2px 8px;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    background: var(--vscode-button-secondaryBackground, #313131);
+    background-image: none;
+    color: var(--vscode-button-secondaryForeground, var(--dbm-fg));
+    font: 12px/18px var(--vscode-font-family, system-ui);
+    cursor: pointer;
+}
+
+.dbm-root .cm-editor .cm-button:hover {
+    background: var(--vscode-button-secondaryHoverBackground, #3c3c3c);
+}
+
+.dbm-root .cm-editor .cm-button:active {
+    background-image: none;
+}
+
+.dbm-root .cm-editor .cm-button:focus-visible,
+.dbm-root .cm-editor .cm-search input[type="checkbox"]:focus-visible {
+    outline: 1px solid var(--dbm-focus);
+    outline-offset: 1px;
+}
+
+.dbm-root .cm-editor .cm-search label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--dbm-muted);
+    font-size: 12px;
+}
+
+.dbm-root .cm-editor .cm-search input[type="checkbox"] {
+    margin: 0;
+    accent-color: var(--vscode-checkbox-background, var(--dbm-focus));
+}
+
+.dbm-root .cm-editor .cm-search button[name="close"] {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    padding: 0 4px;
+    border: none;
+    background: transparent;
+    color: var(--dbm-muted);
+    font-size: 18px;
+    line-height: 22px;
+    cursor: pointer;
+}
+
+.dbm-root .cm-editor .cm-search button[name="close"]:hover {
+    color: var(--dbm-fg);
+}
+
+.dbm-root .cm-editor .cm-searchMatch {
+    background: var(--vscode-editor-findMatchHighlightBackground, rgba(234, 92, 0, 0.33));
+    outline: 1px solid var(--vscode-editor-findMatchHighlightBorder, transparent);
+    border-radius: 2px;
+}
+
+.dbm-root .cm-editor .cm-searchMatch-selected {
+    background: var(--vscode-editor-findMatchBackground, #9e6a03);
+    outline: 1px solid var(--vscode-editor-findMatchBorder, transparent);
+}
+
+/* ----- Accessibility ----- */
+
+body.vscode-high-contrast .dbm-icon:hover,
+body.vscode-high-contrast .dbm-tool:hover {
+    outline: 1px dashed var(--vscode-contrastActiveBorder, var(--dbm-focus));
+}
+
+body.vscode-high-contrast .dbm-picker-item.dbm-focused {
+    outline: 1px solid var(--vscode-contrastActiveBorder, var(--dbm-focus));
+}
+
+body.vscode-reduce-motion *,
+body.vscode-reduce-motion *::before,
+body.vscode-reduce-motion *::after {
+    animation: none !important;
+    transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
