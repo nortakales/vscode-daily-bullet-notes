@@ -37,6 +37,8 @@ export interface ViewConfig {
     pinToolbar: boolean;
     /** daily-bullet-notes.renderedView.pinHeaders: the current year and month stay at the top while scrolling */
     pinHeaders: boolean;
+    /** daily-bullet-notes.renderedView.tabs: the daily log and the lists are on separate tabs */
+    tabs: boolean;
 }
 
 export interface CursorConfig {
@@ -78,6 +80,9 @@ export type HostMessage =
     /** Send any held-back typing now, then reply 'flushed' with this requestId */
     | { type: 'flush'; requestId: number };
 
+/** Commands the webview can run (by their short name, daily-bullet-notes.<name>) */
+export type HostCommand = 'addTodayAndStandupView' | 'addNewList';
+
 export type WebviewMessage =
     /** The webview has loaded (or reloaded) and needs an 'init' */
     | { type: 'ready' }
@@ -92,6 +97,8 @@ export type WebviewMessage =
     | { type: 'flushed'; requestId: number }
     /** Open a link the user Ctrl/Cmd+clicked: a URL, or a path relative to the document */
     | { type: 'openLink'; href: string }
+    /** A button in the view runs a command: the inline Add Today + Standup View button, or the Lists tab's New list */
+    | { type: 'runCommand'; command: HostCommand }
     /**
      * Ctrl/Cmd+S was pressed while typing was held back. The webview has just sent that typing and kept the
      * key from VS Code (whose save would run before the edit lands, and skip the file if it wasn't modified

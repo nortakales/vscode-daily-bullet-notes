@@ -25,7 +25,7 @@
     "lists",
     "todo list"
   ],
-  "version": "1.1.1",
+  "version": "1.2.0",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -126,7 +126,13 @@
           "title": "Rendered View: Pin Toolbar",
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Keep the rendered view's toolbar (Standup view, Collapse all, Expand all) at the top while you scroll. Turn this off to have it scroll away with the document."
+          "markdownDescription": "Keep the rendered view's toolbar (Standup view, Collapse all, Expand all) at the top while you scroll. Turn this off to have it scroll away with the document. With `#daily-bullet-notes.renderedView.tabs#` on, the toolbar is always pinned."
+        },
+        "daily-bullet-notes.renderedView.tabs": {
+          "title": "Rendered View: Tabs",
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Show the daily log and your lists on separate `Daily Log` and `Lists` tabs in the rendered view's toolbar (which then always stays at the top). Turn this off to show everything on one page."
         },
         "daily-bullet-notes.renderedView.pinHeaders": {
           "title": "Rendered View: Pin Year and Month Headers",

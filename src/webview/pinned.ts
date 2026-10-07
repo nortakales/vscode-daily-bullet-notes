@@ -4,7 +4,7 @@
 
 import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { computePinned, headerTextTop, PinGeometry, PinnedLayout, PINNED_YEAR_HEIGHT } from './pinning';
-import { configField, foldField, structureField } from './state';
+import { activeTab, configField, foldField, structureField, tabField } from './state';
 import { BoxSection } from './structure';
 
 function geometryOf(view: EditorView): PinGeometry {
@@ -76,13 +76,14 @@ class PinnedHeaders implements PluginValue {
     }
 
     private get enabled(): boolean {
-        return this.view.state.field(configField).pinHeaders !== false;
+        // The Lists tab has no years or months
+        return this.view.state.field(configField).pinHeaders !== false && activeTab(this.view.state) !== 'lists';
     }
 
     update(update: ViewUpdate) {
         const configChanged = update.startState.field(configField) !== update.state.field(configField);
         if (update.docChanged || update.viewportChanged || update.geometryChanged || update.heightChanged || configChanged ||
-            update.startState.field(foldField) !== update.state.field(foldField)) {
+            update.startState.field(foldField) !== update.state.field(foldField) || update.startState.field(tabField).tab !== update.state.field(tabField).tab) {
             this.measure();
         }
     }

@@ -7,7 +7,7 @@ import type { ViewConfig } from '../rendered/protocol';
 import { computeParentStatusUpdates } from '../taskLogic';
 import {
     analyzeLine, BOX_BORDER_REGEX, BoxSection, countListItems, DAY_HEADER_REGEX, DaySection, DocStructure,
-    outermostFolded, parseStructure, Section, sectionsContaining, updateScopesTouching
+    outermostFolded, parseStructure, Section, sectionsContaining, sectionsOf, updateScopesTouching
 } from './structure';
 import { findLinks, linkForPaste } from './links';
 
@@ -26,6 +26,7 @@ export const DEFAULT_CONFIG: ViewConfig = {
     cursor: { style: 'line', width: 0, blinking: 'blink' },
     pinToolbar: true,
     pinHeaders: true,
+    tabs: false,
 };
 
 export const setConfigEffect = StateEffect.define<ViewConfig>();
@@ -193,6 +194,101 @@ export const foldField = StateField.define<ReadonlySet<string>>({
     },
 });
 
+// ---------------------------------------------------------------------------------------------
+// Tabs (config.tabs): the Daily Log tab shows the document up to the first list, the Lists tab the rest
+
+export type TabId = 'log' | 'lists';
+
+export interface TabState {
+    tab: TabId;
+    /** Where the cursor was in each tab when it was last left */
+    cursors: Partial<Record<TabId, number>>;
+}
+
+export const setTabEffect = StateEffect.define<TabId>();
+
+export const tabField = StateField.define<TabState>({
+    create: () => ({ tab: 'log', cursors: {} }),
+    update(value, tr) {
+        let next = value;
+        if (tr.docChanged && (value.cursors.log !== undefined || value.cursors.lists !== undefined)) {
+            const cursors: Partial<Record<TabId, number>> = {};
+            for (const tab of ['log', 'lists'] as const) {
+                const pos = value.cursors[tab];
+                if (pos !== undefined) {
+                    cursors[tab] = tr.changes.mapPos(pos);
+                }
+            }
+            next = { ...next, cursors };
+        }
+        for (const effect of tr.effects) {
+            if (effect.is(setTabEffect) && effect.value !== next.tab) {
+                next = { tab: effect.value, cursors: { ...next.cursors, [next.tab]: tr.changes.mapPos(tr.startState.selection.main.head) } };
+            }
+        }
+        return next;
+    },
+});
+
+/** 0-based line where the Lists tab starts: the first list box after the Daily Log box */
+export function listsStartLine(structure: DocStructure): number | undefined {
+    const log = structure.boxes.find(box => box.kind === 'dailyLog');
+    return log ? structure.boxes.find(box => box.kind === 'list' && box.line > log.line)?.line : undefined;
+}
+
+/** The active tab, or undefined when there are no tabs (turned off, or no Daily Log box) */
+export function activeTab(state: EditorState): TabId | undefined {
+    const config = state.field(configField, false);
+    const tabs = state.field(tabField, false);
+    if (!config?.tabs || !tabs || !state.field(structureField).boxes.some(box => box.kind === 'dailyLog')) {
+        return undefined;
+    }
+    return tabs.tab;
+}
+
+/** The tab a 0-based line is on */
+export function tabOfLine(state: EditorState, line: number): TabId {
+    const start = listsStartLine(state.field(structureField));
+    return start !== undefined && line >= start ? 'lists' : 'log';
+}
+
+/** The lines (0-based, inclusive) the active tab hides, if any */
+export function tabHiddenLines(state: EditorState): { first: number; last: number } | undefined {
+    const tab = activeTab(state);
+    if (!tab) {
+        return undefined;
+    }
+    const start = listsStartLine(state.field(structureField));
+    const lastLine = state.doc.lines - 1;
+    if (tab === 'log') {
+        return start === undefined ? undefined : { first: start, last: lastLine };
+    }
+    return start === undefined ? { first: 0, last: lastLine } : { first: 0, last: start - 1 };
+}
+
+/** The part of the document the active tab shows (all of it without tabs; empty at the end when nothing) */
+export function tabVisibleRange(state: EditorState): { from: number; to: number } {
+    const doc = state.doc;
+    const hidden = tabHiddenLines(state);
+    if (!hidden) {
+        return { from: 0, to: doc.length };
+    }
+    if (hidden.first > 0) {
+        return { from: 0, to: doc.line(hidden.first).to };
+    }
+    if (hidden.last >= doc.lines - 1) {
+        return { from: doc.length, to: doc.length };
+    }
+    return { from: doc.line(hidden.last + 2).from, to: doc.length };
+}
+
+/** Sections (years, months, days, lists) on the active tab, or all of them without tabs */
+export function sectionsOnTab(state: EditorState): readonly Section[] {
+    const sections = sectionsOf(state.field(structureField));
+    const tab = activeTab(state);
+    return tab ? sections.filter(section => tabOfLine(state, section.line) === tab) : sections;
+}
+
 const foldedCache = new WeakMap<DocStructure, { folds: ReadonlySet<string>; sections: Section[] }>();
 
 /** Outermost folded sections (cached per structure and fold set) */
@@ -214,7 +310,8 @@ export function foldedSections(state: EditorState): Section[] {
 export interface Region {
     from: number;
     to: number;
-    kind: 'box' | 'day' | 'folded';
+    /** hidden: the part of the document the active tab doesn't show */
+    kind: 'box' | 'day' | 'folded' | 'hidden';
     key: string;
 }
 
@@ -229,6 +326,10 @@ export function regionsNear(state: EditorState, from: number, to: number): Regio
     const lineTo = (line: number) => doc.line(Math.min(line, lastLine) + 1).to;
     const regions: Region[] = [];
 
+    const hidden = tabHiddenLines(state);
+    if (hidden && hidden.first <= l1 && hidden.last >= l0) {
+        regions.push({ from: lineFrom(hidden.first), to: lineTo(hidden.last), kind: 'hidden', key: 'tab' });
+    }
     for (const section of foldedSections(state)) {
         if (section.line > l1) {
             break;
@@ -344,11 +445,22 @@ export function protectHeaders(state: EditorState, changes: ChangeSet, isReplace
     changes.iterChanges((from, to, _fromB, _toB, inserted) => input.push({ from, to, insert: inserted.toString() }));
 
     // Search and replace may change text inside folded sections (they unfold), only header lines are kept
-    const near = (from: number, to: number): Region[] => regionsNear(state, from, to).filter(region => !isReplace || region.kind !== 'folded');
+    const near = (from: number, to: number): Region[] =>
+        regionsNear(state, from, to).filter(region => region.kind !== 'hidden' && (!isReplace || region.kind !== 'folded'));
+    // Changes stay on the active tab (search and replace covers the whole document, like find)
+    const visible = isReplace ? undefined : tabVisibleRange(state);
     let modified = false;
     const output: FixedChange[] = [];
     for (const change of input) {
         let { from, to, insert } = change;
+        if (visible && (from < visible.from || to > visible.to)) {
+            modified = true;
+            if (to < visible.from || from > visible.to) {
+                continue;
+            }
+            from = Math.max(from, visible.from);
+            to = Math.min(to, visible.to);
+        }
         const overlaps = (region: Region) => (from < region.to && to > region.from) || (from === to && from > region.from && from < region.to);
         if (isReplace && near(from, to).some(overlaps)) {
             modified = true;
@@ -506,6 +618,34 @@ function clampSelection(tr: Transaction): EditorSelection | undefined {
 }
 
 /**
+ * Keeps selections on the active tab. A search match or a selection set by the app (not the user moving the
+ * cursor) on the other tab switches to it instead.
+ */
+function selectionOnTab(tr: Transaction): TransactionSpec | undefined {
+    const state = tr.startState;
+    if (!activeTab(state)) {
+        return undefined;
+    }
+    const selection = tr.selection!;
+    const visible = tabVisibleRange(state);
+    if (selection.ranges.every(range => range.from >= visible.from && range.to <= visible.to)) {
+        return undefined;
+    }
+    const programmatic = tr.isUserEvent('select.search') || tr.annotation(Transaction.userEvent) === undefined;
+    const target = tabOfLine(state, state.doc.lineAt(selection.main.head).number - 1);
+    if (programmatic && target !== activeTab(state)) {
+        return { effects: setTabEffect.of(target) };
+    }
+    const clip = (pos: number) => Math.min(Math.max(pos, visible.from), visible.to);
+    const clipped = EditorSelection.create(selection.ranges.map(range => EditorSelection.range(clip(range.anchor), clip(range.head))), selection.mainIndex);
+    if (clipped.main.empty && clipped.ranges.length === 1) {
+        const pos = clipped.main.head;
+        return { selection: EditorSelection.single(clampCursor(state, pos, state.selection.main.head)) };
+    }
+    return { selection: clipped };
+}
+
+/**
  * Pasting a URL over selected text in a line's text makes a markdown link of it, as one change. Undefined for any
  * other paste (pasted normally).
  */
@@ -552,7 +692,11 @@ export const dbmTransactionFilter = EditorState.transactionFilter.of(tr => {
         return link;
     }
     if (!tr.docChanged) {
-        if (tr.selection && !tr.effects.some(effect => effect.is(foldEffect) || effect.is(setFoldsEffect))) {
+        if (tr.selection && !tr.effects.some(effect => effect.is(foldEffect) || effect.is(setFoldsEffect) || effect.is(setTabEffect))) {
+            const tabbed = selectionOnTab(tr);
+            if (tabbed) {
+                return [tr, tabbed];
+            }
             const selection = clampSelection(tr);
             if (selection) {
                 return [tr, { selection }];
@@ -593,6 +737,7 @@ export function dbmStateExtensions(config: ViewConfig) {
         configField.init(() => config),
         structureField,
         foldField,
+        tabField,
         dbmTransactionFilter,
     ];
 }

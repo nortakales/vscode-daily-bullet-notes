@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as settings from '../settings';
-import { CursorConfig, HostMessage, RevealTarget, ViewConfig, WebviewMessage } from './protocol';
+import { CursorConfig, HostCommand, HostMessage, RevealTarget, ViewConfig, WebviewMessage } from './protocol';
 import { applyLineChanges, toLf } from './lineChanges';
 import { onDidChangeTokenColors, resolveStatusColors } from './themeTokenColors';
 
@@ -72,8 +72,21 @@ export class RenderedViewProvider implements vscode.CustomTextEditorProvider, vs
                     event.waitUntil(this.flush(event.document));
                 }
             }),
-            this.onDidPostMessage
+            this.onDidPostMessage,
+            // Moves the "Today" badge (and the Add Today button) at midnight in views left open overnight
+            new vscode.Disposable(clearInterval.bind(undefined, setInterval(() => this.refreshToday(), 30_000)))
         );
+    }
+
+    private today = todayKey();
+
+    /** Sends the config (with the new date) to every view if the date changed since the last check */
+    private refreshToday() {
+        const today = todayKey();
+        if (today !== this.today) {
+            this.today = today;
+            this.forEachReadyPanel(panel => this.post(panel, { type: 'config', config: this.getConfig(panel.document) }));
+        }
     }
 
     dispose() {
@@ -210,6 +223,18 @@ export class RenderedViewProvider implements vscode.CustomTextEditorProvider, vs
             case 'openLink':
                 openLink(panel.document, message.href).catch(console.error);
                 break;
+            case 'runCommand': {
+                if (!HOST_COMMANDS.includes(message.command)) {
+                    break;
+                }
+                this.refreshToday();
+                // The commands work on the active editor: this view, unless focus moved since the click
+                if (!panel.webviewPanel.active) {
+                    panel.webviewPanel.reveal(undefined, false);
+                }
+                vscode.commands.executeCommand(`daily-bullet-notes.${message.command}`).then(undefined, console.error);
+                break;
+            }
             case 'save': {
                 // After the typing the webview just sent has been applied. Not part of the queue itself: saving
                 // flushes the webview, which waits for the queue, and must not end up waiting for itself.
@@ -278,6 +303,8 @@ export class RenderedViewProvider implements vscode.CustomTextEditorProvider, vs
         if (event.contentChanges.length === 0) {
             return;
         }
+        // e.g. Add Today right after midnight: mark the new day as today
+        this.refreshToday();
         const key = event.document.uri.toString();
         const state = this.documents.get(key);
         if (!state) {
@@ -346,6 +373,7 @@ export class RenderedViewProvider implements vscode.CustomTextEditorProvider, vs
             centered: dbmConfig.get<boolean>('renderedView.centeredLayout', true),
             pinToolbar: dbmConfig.get<boolean>('renderedView.pinToolbar', true),
             pinHeaders: dbmConfig.get<boolean>('renderedView.pinHeaders', true),
+            tabs: dbmConfig.get<boolean>('renderedView.tabs', true),
             cursor: {
                 style: editorConfig.get<CursorConfig['style']>('cursorStyle', 'line'),
                 width: editorConfig.get<number>('cursorWidth', 0),
@@ -423,4 +451,11 @@ function getNonce() {
         nonce += characters.charAt(Math.floor(Math.random() * characters.length));
     }
     return nonce;
+}
+
+const HOST_COMMANDS: readonly HostCommand[] = ['addTodayAndStandupView', 'addNewList'];
+
+function todayKey(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 }

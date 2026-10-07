@@ -33,5 +33,6 @@ export const UI_ICONS = {
     standup: ui('<path d="M1.5 3.5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1H5.5L3 11V9H2.5a1 1 0 0 1-1-1z"/><path d="M12.5 6h1a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1H13V14.5l-2.5-2h-3a1 1 0 0 1-1-1V11"/>'),
     unfold: ui('<path d="M4.5 6L8 2.5 11.5 6M4.5 10L8 13.5 11.5 10"/>'),
     check: ui('<path d="M3.5 8.5l3 3 6-7"/>'),
+    add: ui('<path d="M8 3v10M3 8h10"/>'),
     info: ui('<circle cx="8" cy="8" r="6.25"/><path d="M8 7.25v4M8 4.9v.2"/>'),
 };

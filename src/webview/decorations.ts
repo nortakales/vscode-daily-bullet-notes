@@ -4,10 +4,10 @@
 
 import { EditorState, RangeSet, RangeSetBuilder, StateField, Transaction } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view';
-import type { ViewConfig } from '../rendered/protocol';
+import type { HostCommand, ViewConfig } from '../rendered/protocol';
 import { statusIconSvg, UI_ICONS } from './icons';
 import { findLinks } from './links';
-import { configField, foldField, remoteAnnotation, structureField } from './state';
+import { activeTab, configField, foldField, remoteAnnotation, structureField, tabHiddenLines } from './state';
 import {
     analyzeLine, BoxSection, BULLET_GLYPHS, BOX_BORDER_REGEX, DAY_HEADER_REGEX, displayNumber, headerHasRoom, inListSection, listDepth, dayContaining, DaySection, dayLabel, directSubtaskStatuses, DocStructure, isToday,
     StatusKind, statusKind, statusLabel, subtreeEnd, summarizeDay
@@ -144,7 +144,7 @@ class BoxWidget extends WidgetType {
     }
 }
 
-function boxProps(box: BoxSection, folded: boolean, spaced: boolean): BoxProps {
+function boxProps(box: BoxSection, folded: boolean, spaced: boolean, listsHeading: boolean): BoxProps {
     let meta = '';
     if ((box.kind === 'year' || box.kind === 'month') && folded) {
         // Only when folded: an open year or month shows its days
@@ -152,7 +152,8 @@ function boxProps(box: BoxSection, folded: boolean, spaced: boolean): BoxProps {
     } else if (box.kind === 'list') {
         meta = String(box.itemCount);
     }
-    return { kind: box.kind, title: box.title, key: box.key, folded, meta, firstList: box.firstList, spaced };
+    // With tabs, the Lists tab is the heading
+    return { kind: box.kind, title: box.title, key: box.key, folded, meta, firstList: box.firstList && listsHeading, spaced };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -316,9 +317,102 @@ interface BlockValue {
     revision: number;
     folds: ReadonlySet<string>;
     config: ViewConfig;
+    tab: string | undefined;
 }
 
+/** The Lists tab of a document without lists */
+class NoListsWidget extends WidgetType {
+    eq() {
+        return true;
+    }
+
+    get estimatedHeight() {
+        return 120;
+    }
+
+    toDOM(view: EditorView): HTMLElement {
+        const root = element('div', 'dbm-nolists');
+        root.appendChild(element('div', 'dbm-nolists-title', 'No lists yet'));
+        root.appendChild(element('div', 'dbm-nolists-text', 'Lists live at the bottom of your file, after the daily log: backlogs, ideas, anything that isn\'t about one day.'));
+        root.appendChild(commandButton(view, 'New list', 'addNewList'));
+        return root;
+    }
+
+    ignoreEvent() {
+        return true;
+    }
+}
+
+const noListsWidget = new NoListsWidget();
+
 const hidden = Decoration.replace({});
+
+/** A dashed "+ label" button that runs an extension command */
+function commandButton(view: EditorView, label: string, command: HostCommand): HTMLElement {
+    const button = element('button', 'dbm-addtoday-button');
+    button.type = 'button';
+    button.title = label;
+    button.innerHTML = UI_ICONS.add;
+    button.appendChild(element('span', undefined, label));
+    button.addEventListener('mousedown', event => event.preventDefault());
+    button.addEventListener('click', event => {
+        event.preventDefault();
+        view.state.facet(dbmActions)?.runCommand(command);
+    });
+    return button;
+}
+
+/** A block with one command button: Add Today & Standup View under the most recent day, New list after the lists */
+class CommandButtonWidget extends WidgetType {
+    constructor(readonly label: string, readonly command: HostCommand) {
+        super();
+    }
+
+    eq(other: CommandButtonWidget) {
+        return other.command === this.command && other.label === this.label;
+    }
+
+    get estimatedHeight() {
+        return 36;
+    }
+
+    toDOM(view: EditorView): HTMLElement {
+        const root = element('div', 'dbm-addtoday');
+        root.appendChild(commandButton(view, this.label, this.command));
+        return root;
+    }
+
+    ignoreEvent() {
+        return true;
+    }
+}
+
+const addTodayWidget = Decoration.widget({ widget: new CommandButtonWidget('Add Today & Standup View', 'addTodayAndStandupView'), block: true, side: 1 });
+const newListWidget = Decoration.widget({ widget: new CommandButtonWidget('New list', 'addNewList'), block: true, side: 1 });
+
+/**
+ * The most recent day of the daily log, if today isn't in it (and the log has no future days): where the
+ * Add Today button goes. Days inside lists don't count.
+ */
+export function dayMissingToday(structure: DocStructure, today: ViewConfig['today']): DaySection | undefined {
+    if (!structure.boxes.some(box => box.kind === 'dailyLog')) {
+        return undefined;
+    }
+    const firstList = structure.boxes.find(box => box.kind === 'list')?.line ?? Infinity;
+    const logDays = structure.days.filter(day => day.line < firstList);
+    if (logDays.length === 0 || logDays.some(day => isToday(day, today))) {
+        return undefined;
+    }
+    const last = logDays[logDays.length - 1];
+    if (last.year !== undefined && last.month !== undefined) {
+        const lastValue = (last.year * 13 + last.month) * 32 + last.day;
+        const todayValue = (today.year * 13 + today.month) * 32 + today.day;
+        if (lastValue > todayValue) {
+            return undefined;
+        }
+    }
+    return last;
+}
 
 function buildBlocks(state: EditorState): BlockValue {
     const structure = state.field(structureField);
@@ -335,9 +429,29 @@ function buildBlocks(state: EditorState): BlockValue {
     // The last line of the latest folded section: headers right after it stay compact
     let hiddenUntil = -1;
     const { boxes, days } = structure;
+    const addTodayAfter = dayMissingToday(structure, config.today);
+    const tab = activeTab(state);
+    // With tabs, the toolbar is always pinned
+    const inlineToolbar = config.pinToolbar === false && !tab;
+
+    // The part of the document the active tab hides: the daily log (Lists tab) or the lists (Daily Log tab)
+    const tabHidden = tabHiddenLines(state);
+    let stopAt = Infinity;
+    if (tabHidden && tabHidden.first === 0) {
+        const nothingShown = tabHidden.last >= doc.lines - 1;
+        decos.add(0, lineTo(tabHidden.last), Decoration.replace({ widget: nothingShown ? noListsWidget : hiddenBlock, block: true }));
+        atomic.add(0, lineTo(tabHidden.last), hidden);
+        hiddenUntil = tabHidden.last;
+    } else if (tabHidden) {
+        stopAt = tabHidden.first;
+    }
+
     for (let b = 0, d = 0; b < boxes.length || d < days.length;) {
         const box: BoxSection | undefined = boxes[b];
         const day: DaySection | undefined = days[d];
+        if (Math.min(box?.line ?? Infinity, day?.line ?? Infinity) >= stopAt) {
+            break;
+        }
         if (box && (!day || box.line < day.line)) {
             b++;
             if (box.line <= hiddenUntil || box.line + 2 >= doc.lines) {
@@ -351,7 +465,7 @@ function buildBlocks(state: EditorState): BlockValue {
                 hiddenUntil = box.end;
             }
             // The Daily Log box is the toolbar: pinned above the editor (nothing here), or here in the flow
-            const widget = box.kind === 'dailyLog' ? (config.pinToolbar === false ? logBarWidget : hiddenBlock) : new BoxWidget(boxProps(box, folded, spaced));
+            const widget = box.kind === 'dailyLog' ? (inlineToolbar ? logBarWidget : hiddenBlock) : new BoxWidget(boxProps(box, folded, spaced, !tab));
             decos.add(from, to, Decoration.replace({ widget, block: true, folded }));
             atomic.add(from, to, hidden);
         } else if (day) {
@@ -383,9 +497,24 @@ function buildBlocks(state: EditorState): BlockValue {
             decos.add(from, from, Decoration.line({ class: `dbm-day-line${folded ? ' dbm-day-line-folded' : ''}${spaced ? ' dbm-day-spaced' : ''}` }));
             decos.add(from, to, Decoration.replace({ widget, folded }));
             atomic.add(from, to, hidden);
+            if (day === addTodayAfter) {
+                // Right under the day's last line with text (or the folded day)
+                let last = day.end;
+                while (!folded && last > day.line && getLine(last).trim() === '') {
+                    last--;
+                }
+                decos.add(lineTo(last), lineTo(last), addTodayWidget);
+            }
         }
     }
-    return { decos: decos.finish(), atomic: atomic.finish(), revision: structure.revision, folds, config };
+    if (stopAt < doc.lines) {
+        decos.add(lineFrom(stopAt), doc.length, Decoration.replace({ widget: hiddenBlock, block: true }));
+        atomic.add(lineFrom(stopAt), doc.length, hidden);
+    } else if (tab === 'lists' && !(tabHidden && tabHidden.last >= doc.lines - 1)) {
+        // The Lists tab always ends with a New list button (a tab without lists has its own)
+        decos.add(doc.length, doc.length, newListWidget);
+    }
+    return { decos: decos.finish(), atomic: atomic.finish(), revision: structure.revision, folds, config, tab };
 }
 
 function touchesFolded(decos: DecorationSet, tr: Transaction): boolean {
@@ -439,7 +568,8 @@ export const blockField = StateField.define<BlockValue>({
     create: buildBlocks,
     update(value, tr) {
         const structure = tr.state.field(structureField);
-        if (structure.revision !== value.revision || tr.state.field(foldField) !== value.folds || tr.state.field(configField) !== value.config) {
+        if (structure.revision !== value.revision || tr.state.field(foldField) !== value.folds || tr.state.field(configField) !== value.config ||
+            activeTab(tr.state) !== value.tab) {
             return buildBlocks(tr.state);
         }
         if (!tr.docChanged) {

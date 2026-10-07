@@ -272,7 +272,7 @@ suite('Rendered view', () => {
 		}
 	});
 
-	for (const [setting, field] of [['centeredLayout', 'centered'], ['pinToolbar', 'pinToolbar'], ['pinHeaders', 'pinHeaders']] as const) {
+	for (const [setting, field] of [['centeredLayout', 'centered'], ['pinToolbar', 'pinToolbar'], ['pinHeaders', 'pinHeaders'], ['tabs', 'tabs']] as const) {
 		test(`the ${setting} setting is sent to the webview`, async () => {
 			const document = await openRendered(createFile(DAY));
 			const init = messagesFor(document, 'init')[0];
@@ -319,5 +319,32 @@ suite('Rendered view', () => {
 		await vscode.commands.executeCommand('daily-bullet-notes.renderedView.find');
 		const commands = messagesFor(document, 'command').map(message => message.type === 'command' && message.command);
 		assert.deepStrictEqual(commands, ['standupView', 'find']);
+	});
+
+	test('a button in the view can only run its own commands', async () => {
+		const document = await openRendered(createFile(DAY));
+		const text = document.getText();
+		const ran: string[] = [];
+		const listener = vscode.commands.registerCommand('daily-bullet-notes.test.notAllowed', () => ran.push('notAllowed'));
+		try {
+			await provider.handleMessageForTesting(document, { type: 'runCommand', command: 'test.notAllowed' as never });
+			await sleep(200);
+			assert.deepStrictEqual(ran, []);
+			assert.strictEqual(document.getText(), text);
+		} finally {
+			listener.dispose();
+		}
+	});
+
+	test('the inline Add Today button adds today, marked as today, and shows the standup view', async () => {
+		const document = await openRendered(createFile(DAY));
+		await provider.handleMessageForTesting(document, { type: 'runCommand', command: 'addTodayAndStandupView' });
+		const today = new Date();
+		const header = getDailyHeader(today.getMonth() + 1, today.getDate());
+		assert.ok(await waitFor(() => document.getText().includes(header)), 'today was not added');
+		assert.ok(await waitFor(() => messagesFor(document, 'command').some(message => message.type === 'command' && message.command === 'standupView')));
+		// The view's idea of today (which day gets the Today badge) is the current date
+		const configs = messagesFor(document).flatMap(message => message.type === 'init' || message.type === 'config' ? [message.config.today] : []);
+		assert.deepStrictEqual(configs[configs.length - 1], { year: today.getFullYear(), month: today.getMonth() + 1, day: today.getDate() });
 	});
 });

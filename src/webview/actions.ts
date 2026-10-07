@@ -2,6 +2,8 @@
 
 import { Facet } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
+import type { HostCommand } from '../rendered/protocol';
+import type { TabId } from './state';
 
 /** Things widgets can ask the app to do */
 export interface DbmActions {
@@ -13,6 +15,10 @@ export interface DbmActions {
     announce(message: string): void;
     /** Ctrl/Cmd+Click on a link */
     openLink(href: string): void;
+    /** Buttons that run an extension command (Add Today + Standup View, New list) */
+    runCommand(command: HostCommand): void;
+    /** A tab of the toolbar was clicked */
+    switchTab(view: EditorView, tab: TabId): void;
 }
 
 export const dbmActions = Facet.define<DbmActions, DbmActions | undefined>({ combine: values => values[0] });

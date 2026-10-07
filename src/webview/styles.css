@@ -327,6 +327,24 @@ body.vscode-high-contrast {
     -webkit-user-select: none;
 }
 
+/* Pinned: a floating bar with rounded corners, like VS Code's panel */
+.dbm-logbar.dbm-logbar-pinned {
+    height: 32px;
+    margin: 6px 8px 4px;
+    border: 1px solid var(--vscode-panel-border, var(--vscode-editorGroup-border, rgba(128, 128, 128, 0.35)));
+    border-radius: 8px;
+}
+
+.dbm-logbar.dbm-logbar-pinned .dbm-logbar-inner {
+    height: 30px;
+}
+
+.dbm-logbar.dbm-logbar-pinned .dbm-tab {
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 6px;
+}
+
 /* Not pinned: the same bar in the document flow, at the Daily Log box, scrolling with the text */
 .dbm-logbar-flow {
     display: flow-root;
@@ -408,6 +426,89 @@ body.vscode-high-contrast .dbm-logbar {
 .dbm-tool .dbm-ui {
     width: 14px;
     height: 14px;
+}
+
+/* Tabs (renderedView.tabs): like the tabs of VS Code's panel (Terminal, Problems...) in its current design:
+   pills, the active one with a subtle background and the panel's active title color */
+.dbm-tabs {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    margin-right: auto;
+    margin-left: -10px;
+}
+
+.dbm-tab {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 5px;
+    height: 20px;
+    padding: 0 8px;
+    border-radius: 5px;
+    font: 12px/16px var(--vscode-font-family, system-ui);
+    color: var(--vscode-panelTitle-inactiveForeground, var(--dbm-muted));
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.dbm-tab:hover {
+    color: var(--vscode-panelTitle-activeForeground, var(--dbm-fg));
+}
+
+.dbm-tab.dbm-tab-active {
+    background: var(--dbm-hover);
+    color: var(--vscode-panelTitle-activeForeground, var(--dbm-fg));
+}
+
+.dbm-tab:focus-visible {
+    outline: 1px solid var(--dbm-focus);
+    outline-offset: -1px;
+}
+
+.dbm-tab .dbm-ui {
+    width: 14px;
+    height: 14px;
+}
+
+.dbm-tab-count {
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+}
+
+.dbm-tab-count:empty {
+    display: none;
+}
+
+.dbm-log-name[hidden],
+.dbm-tabs[hidden],
+.dbm-tool[hidden] {
+    display: none;
+}
+
+/* The Lists tab of a file without lists */
+.dbm-nolists {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 28px 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.dbm-nolists-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--dbm-fg);
+}
+
+.dbm-nolists-text {
+    margin-bottom: 6px;
+    color: var(--dbm-muted);
 }
 
 /* Narrow panels: icon-only buttons (their tooltips and accessible names keep the labels) */
@@ -1020,4 +1121,38 @@ body.vscode-reduce-motion *::after {
         animation: none !important;
         transition: none !important;
     }
+}
+
+/* ----- Add Today button (below the most recent day when today is missing) ----- */
+
+.dbm-addtoday {
+    padding: 6px 0 4px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.dbm-addtoday-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    padding: 0 10px 0 8px;
+    /* Dashed, and clearly visible (the theme's panel border is too faint for a dashed line) */
+    border: 1px dashed color-mix(in srgb, var(--dbm-muted) 65%, transparent);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--dbm-muted);
+    font: 400 12px/1 var(--vscode-font-family, system-ui);
+    cursor: pointer;
+}
+
+.dbm-addtoday-button:hover {
+    border-color: var(--dbm-muted);
+    background: var(--dbm-hover);
+    color: var(--dbm-fg);
+}
+
+.dbm-addtoday-button:focus-visible {
+    outline: 1px solid var(--dbm-focus);
+    outline-offset: 1px;
 }

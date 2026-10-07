@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.2.0 - 2026-10-06
+
+* Rendered view: the daily log and your lists are now on separate `Daily Log` and `Lists` tabs, with a `New list` button in the toolbar and after your lists (new `Rendered View: Tabs` setting, on by default; turn it off for the single page)
+* Rendered view: the toolbar is now a floating bar with rounded corners, with tabs styled like the tabs of VS Code's panel
+* Rendered view: when today isn't in the log yet, an `Add Today & Standup View` button shows below the most recent day
+* Rendered view: fixed the `Today` badge staying on yesterday when the view was left open overnight
+
 ## 1.1.1 - 2026-10-05
 
 * Rendered view: day headers use your theme's cyan, and year and month headers its magenta

@@ -9,7 +9,7 @@ import type { HostMessage, StatusColors, StatusKey, ViewConfig, WebviewMessage }
 import { IS_MAC } from './decorations';
 import { applyStandupView, createExtensions, expandAll, reveal, tabSizeCompartment } from './editor';
 import { StatusPicker } from './picker';
-import { clampCursor, foldField, remoteAnnotation, setConfigEffect, setFoldsEffect, structureField } from './state';
+import { clampCursor, foldField, remoteAnnotation, setConfigEffect, setFoldsEffect, setTabEffect, structureField, tabOfLine, tabVisibleRange } from './state';
 import { sectionsOf, STATUS_ORDER } from './structure';
 import { TypingBuffer } from './typing';
 
@@ -179,6 +179,7 @@ class RenderedView {
                 announce: message => this.announce(message),
                 onUpdate: update => this.onUpdate(update),
                 openLink: href => this.post({ type: 'openLink', href }),
+                runCommand: command => this.post({ type: 'runCommand', command }),
             }),
         });
         if (this.view) {
@@ -195,15 +196,18 @@ class RenderedView {
         if (!saved) {
             applyStandupView(view);
         } else {
-            view.dispatch({ effects: setFoldsEffect.of(saved.folds) });
             const doc = view.state.doc;
             let pos = 0;
             if (saved.cursor && saved.cursor.line < doc.lines) {
                 const line = doc.line(saved.cursor.line + 1);
                 pos = Math.min(line.from + saved.cursor.character, line.to);
             }
+            // With tabs, the tab the cursor was on
+            view.dispatch({ effects: [setFoldsEffect.of(saved.folds), setTabEffect.of(tabOfLine(view.state, doc.lineAt(pos).number - 1))] });
             pos = clampCursor(view.state, pos, pos - 1);
-            const top = saved.topLine !== undefined && saved.topLine < doc.lines ? doc.line(saved.topLine + 1).from : pos;
+            const visible = tabVisibleRange(view.state);
+            let top = saved.topLine !== undefined && saved.topLine < doc.lines ? doc.line(saved.topLine + 1).from : pos;
+            top = top < visible.from || top > visible.to ? pos : top;
             view.dispatch({
                 selection: EditorSelection.cursor(pos),
                 effects: EditorView.scrollIntoView(top, { y: 'start', yMargin: 0 }),

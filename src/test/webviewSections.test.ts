@@ -9,7 +9,7 @@ import { sampleLines } from './webviewStructure.test';
 
 const CONFIG: ViewConfig = {
     automaticStatusUpdates: true, tabSize: 4, insertSpaces: true, today: { year: 2026, month: 10, day: 4 }, centered: true,
-    cursor: { style: 'line', width: 0, blinking: 'blink' }, pinToolbar: true, pinHeaders: true,
+    cursor: { style: 'line', width: 0, blinking: 'blink' }, pinToolbar: true, pinHeaders: true, tabs: false,
 };
 
 const LINES = sampleLines([

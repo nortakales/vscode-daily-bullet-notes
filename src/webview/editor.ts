@@ -5,7 +5,7 @@ import { Compartment, EditorSelection, EditorState, Extension, Prec, Transaction
 import { drawSelection, dropCursor, EditorView, KeyBinding, keymap, ViewUpdate } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
 import { openSearchPanel, search, searchKeymap } from '@codemirror/search';
-import type { RevealTarget, ViewConfig } from '../rendered/protocol';
+import type { HostCommand, RevealTarget, ViewConfig } from '../rendered/protocol';
 import {
     arrowLeftCommand, backspaceCommand, deleteForwardCommand, enterCommand, indentCommand, moveLinesCommand, setStatusCommand, textStartOf
 } from './commands';
@@ -14,7 +14,10 @@ import { StatusPicker } from './picker';
 import { caretLayer } from './caret';
 import { logBar } from './logbar';
 import { pinnedHeaders } from './pinned';
-import { clampCursor, configField, dbmStateExtensions, foldEffect, foldField, Region, regionAt, setFoldsEffect, structureField, tabSizeOf } from './state';
+import {
+    activeTab, clampCursor, configField, dbmStateExtensions, foldEffect, foldField, listsStartLine, Region, regionAt, sectionsOnTab, setFoldsEffect,
+    setTabEffect, structureField, tabField, TabId, tabOfLine, tabSizeOf, tabVisibleRange
+} from './state';
 import { analyzeLine, sectionsContaining, sectionsOf, standupDays, standupFoldKeys, STATUS_INFO, statusKind } from './structure';
 
 export const tabSizeCompartment = new Compartment();
@@ -143,10 +146,71 @@ function nearestTextPosition(state: EditorState, region: Region): number | undef
     return undefined;
 }
 
+/** The first line in view (as a position), to come back to it */
+function topPosition(view: EditorView): number {
+    const top = view.scrollDOM.getBoundingClientRect().top - view.documentTop;
+    return view.lineBlockAtHeight(Math.max(0, top)).from;
+}
+
+/** Where each tab was scrolled to when it was last left (a position at the top of the view) */
+const tabScroll = new WeakMap<EditorView, Partial<Record<TabId, number>>>();
+
+/**
+ * Shows a tab. With `restore` (clicking a tab), the cursor and scroll position go back to where they were on
+ * that tab; otherwise the caller places them (reveals, search).
+ */
+export function switchTab(view: EditorView, tab: TabId, restore = true) {
+    const current = activeTab(view.state);
+    if (!current || current === tab) {
+        return;
+    }
+    const scroll = tabScroll.get(view) ?? {};
+    scroll[current] = topPosition(view);
+    tabScroll.set(view, scroll);
+    view.dispatch({ effects: setTabEffect.of(tab) });
+    if (!restore) {
+        return;
+    }
+    const state = view.state;
+    const visible = tabVisibleRange(state);
+    const clip = (pos: number) => Math.min(Math.max(pos, visible.from), visible.to);
+    const remembered = state.field(tabField).cursors[tab];
+    const pos = remembered !== undefined ? clip(remembered) : visible.from;
+    const top = scroll[tab] !== undefined ? clip(scroll[tab]!) : visible.from;
+    const cursor = clampCursor(state, pos, pos - 1);
+    view.dispatch({
+        selection: EditorSelection.cursor(cursor),
+        effects: EditorView.scrollIntoView(top, { y: 'start', yMargin: 0 }),
+        userEvent: 'select',
+    });
+    // Nowhere to type when everything on the tab is folded (or there are no lists)
+    const region = regionAt(view.state, cursor);
+    if ((region && region.kind !== 'day') || visible.from === visible.to) {
+        view.contentDOM.blur();
+    } else {
+        view.focus();
+    }
+}
+
+/** Shows the tab a 0-based line is on */
+function showTabOf(view: EditorView, line: number) {
+    if (activeTab(view.state)) {
+        switchTab(view, tabOfLine(view.state, line), false);
+    }
+}
+
 /** Folds everything except the two most recent days, and scrolls to them */
 export function applyStandupView(view: EditorView) {
+    showTabOf(view, 0);
     const structure = view.state.field(structureField);
-    view.dispatch({ effects: setFoldsEffect.of(standupFoldKeys(structure)) });
+    let keys = standupFoldKeys(structure);
+    if (activeTab(view.state)) {
+        // The lists are on their own tab, out of the way: they keep their folds
+        const state = view.state;
+        const listKeys = new Set(sectionsOf(structure).filter(section => tabOfLine(state, section.line) === 'lists').map(section => section.key));
+        keys = [...keys.filter(key => !listKeys.has(key)), ...[...state.field(foldField)].filter(key => listKeys.has(key))];
+    }
+    view.dispatch({ effects: setFoldsEffect.of(keys) });
     const days = standupDays(structure);
     if (days.length === 0) {
         return;
@@ -168,13 +232,17 @@ export function applyStandupView(view: EditorView) {
     });
 }
 
+/** Unfolds everything (on the active tab, with tabs) */
 export function expandAll(view: EditorView) {
-    view.dispatch({ effects: setFoldsEffect.of([]) });
+    const keys = new Set(sectionsOnTab(view.state).map(section => section.key));
+    view.dispatch({ effects: setFoldsEffect.of([...view.state.field(foldField)].filter(key => !keys.has(key))) });
 }
 
-/** Folds every section at every level (years, months, days and lists), like VS Code's Fold All */
+/** Folds every section at every level (years, months, days and lists; on the active tab), like VS Code's Fold All */
 export function collapseAll(view: EditorView) {
-    view.dispatch({ effects: setFoldsEffect.of(sectionsOf(view.state.field(structureField)).map(section => section.key)) });
+    const keys = new Set(view.state.field(foldField));
+    sectionsOnTab(view.state).forEach(section => keys.add(section.key));
+    view.dispatch({ effects: setFoldsEffect.of([...keys]) });
     moveCursorOutOfFolds(view);
 }
 
@@ -182,6 +250,7 @@ export function collapseAll(view: EditorView) {
 export function reveal(view: EditorView, target: RevealTarget) {
     const doc = view.state.doc;
     const lineNumber = Math.min(Math.max(target.line + 1, 1), doc.lines);
+    showTabOf(view, lineNumber - 1);
     const folds = view.state.field(foldField);
     const keys = sectionsContaining(view.state.field(structureField), lineNumber - 1).map(section => section.key).filter(key => folds.has(key));
     if (keys.length > 0) {
@@ -201,6 +270,8 @@ export interface EditorOptions {
     onUpdate(update: ViewUpdate): void;
     /** Ctrl/Cmd+Click on a link */
     openLink(href: string): void;
+    /** Runs an extension command */
+    runCommand(command: HostCommand): void;
 }
 
 export function openPicker(view: EditorView, lineNumber: number, anchor: DOMRect, options: EditorOptions) {
@@ -258,6 +329,8 @@ export function createExtensions(options: EditorOptions): Extension[] {
         toggleFold,
         announce: options.announce,
         openLink: options.openLink,
+        runCommand: options.runCommand,
+        switchTab,
     };
     const dbmKeymap: KeyBinding[] = [
         { key: 'Enter', run: run(enterCommand) },
@@ -302,6 +375,9 @@ export function createExtensions(options: EditorOptions): Extension[] {
         }),
         // A centered column of limited width, or the full width of the panel
         EditorView.editorAttributes.compute([configField], state => ({ class: state.field(configField).centered === false ? 'dbm-full-width' : 'dbm-centered' })),
+        // An empty Lists tab has nowhere to type
+        EditorView.editable.compute([tabField, structureField, configField], state =>
+            !(activeTab(state) === 'lists' && listsStartLine(state.field(structureField)) === undefined)),
         EditorView.lineWrapping,
         // drawSelection draws the selection; caret.ts draws the cursor like VS Code's
         drawSelection(),
