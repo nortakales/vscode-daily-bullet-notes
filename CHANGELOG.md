@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.2.1 - 2026-10-07
+
+* Rendered view: with everything collapsed, clicking above or beside the headers no longer leaves a cursor there (there is no line to type on)
+
 ## 1.2.0 - 2026-10-06
 
 * Rendered view: the daily log and your lists are now on separate `Daily Log` and `Lists` tabs, with a `New list` button in the toolbar and after your lists (new `Rendered View: Tabs` setting, on by default; turn it off for the single page)

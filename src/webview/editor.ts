@@ -389,5 +389,18 @@ export function createExtensions(options: EditorOptions): Extension[] {
         keymap.of(searchKeymap),
         keymap.of(defaultKeymap.filter(binding => !binding.key || !REPLACED_DEFAULT_KEYS.has(binding.key))),
         EditorView.updateListener.of(options.onUpdate),
+        // With nothing but folded headers (everything collapsed), a click above or beside them leaves the cursor at
+        // a header, where there is nothing to type on: give up focus instead of drawing a caret there
+        EditorView.updateListener.of(update => {
+            if (!(update.selectionSet || update.focusChanged) || !update.view.hasFocus) {
+                return;
+            }
+            const state = update.state;
+            const head = state.selection.main;
+            const region = head.empty ? regionAt(state, head.head) : undefined;
+            if (region && region.kind !== 'day') {
+                queueMicrotask(() => update.view.contentDOM.blur());
+            }
+        }),
     ];
 }
