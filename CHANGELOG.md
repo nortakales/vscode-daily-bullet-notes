@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.2.2 - 2026-10-12
+
+* Rendered view: year and month headers are now the same cyan as day headers
+
 ## 1.2.1 - 2026-10-07
 
 * Rendered view: with everything collapsed, clicking above or beside the headers no longer leaves a cursor there (there is no line to type on)

@@ -117,7 +117,7 @@ For example, in your `settings.json`:
 }
 ```
 
-In the rendered view, day headers use your theme's terminal cyan, year and month headers its terminal magenta, and the `Today` badge its terminal red (`terminal.ansiBrightCyan`, `terminal.ansiBrightMagenta` and `terminal.ansiBrightRed`).
+In the rendered view, year, month and day headers use your theme's terminal cyan, and the `Today` badge its terminal red (`terminal.ansiBrightCyan` and `terminal.ansiBrightRed`).
 
 ## Commands
 

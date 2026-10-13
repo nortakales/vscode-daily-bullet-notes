@@ -8,9 +8,9 @@
     --dbm-status-blocked: var(--vscode-charts-orange, #d18616);
     --dbm-status-removed: var(--vscode-charts-blue, #3794ff);
     --dbm-status-tomorrow: var(--vscode-charts-yellow, #cca700);
-    /* Header colors: the theme's terminal cyan for days, magenta for years and months */
+    /* Header colors: the theme's terminal cyan for days, years and months */
     --dbm-day-heading: var(--vscode-terminal-ansiBrightCyan, #29b8db);
-    --dbm-year-month-heading: var(--vscode-terminal-ansiBrightMagenta, #d670d6);
+    --dbm-year-month-heading: var(--dbm-day-heading);
     /* The Today badge: the theme's terminal red */
     --dbm-today: var(--vscode-terminal-ansiBrightRed, #f14c4c);
 }
