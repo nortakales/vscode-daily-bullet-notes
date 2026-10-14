@@ -179,6 +179,21 @@ suite('Webview links', () => {
         assert.strictEqual(paste(DAY + '- item text', 'text', 'mailto:me@x.com'), DAY + '- item [text](mailto:me@x.com)§');
     });
 
+    test('pasting a URL over a URL changes the URL', () => {
+        // A bare URL is replaced, not turned into a link that still shows the old URL
+        assert.strictEqual(paste(DAY + '[ ] read https://old.com/a today', 'https://old.com/a', 'https://new.com/b'), DAY + '[ ] read https://new.com/b§ today');
+        // A link that shows its own URL changes its text and its address
+        assert.strictEqual(paste(DAY + '[ ] read [https://old.com/a](https://old.com/a) today', 'https://old.com/a', 'https://new.com/b'),
+            DAY + '[ ] read [https://new.com/b](https://new.com/b)§ today');
+        assert.strictEqual(paste(DAY + '[ ] read [https://old.com/a](https://old.com/a) today', 'https://old.com/a', 'https://new.com/b', 1),
+            DAY + '[ ] read [https://new.com/b](https://new.com/b)§ today');
+        // The address of any link
+        assert.strictEqual(paste(DAY + '[ ] read [the doc](https://old.com/a) today', 'https://old.com/a', 'https://new.com/b'), DAY + '[ ] read [the doc](https://new.com/b§) today');
+        // The text of a link with other text stays a text change
+        assert.strictEqual(paste(DAY + '[ ] read [https://old.com/a](https://x.com) today', 'https://old.com/a', 'https://new.com/b'),
+            DAY + '[ ] read [https://new.com/b§](https://x.com) today');
+    });
+
     test('other pastes are pasted as they are', () => {
         assert.strictEqual(paste(DAY + '[ ] read the docs', 'docs', 'not a url'), DAY + '[ ] read the not a url§');
         // Selection that includes the hidden box, or spans lines, or touches a link

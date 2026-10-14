@@ -50,7 +50,8 @@ export function singleUrl(text: string): string | undefined {
  */
 export function linkForPaste(selected: string, pasted: string): string | undefined {
     const url = singleUrl(pasted);
-    if (!url || selected.length === 0 || /[[\]\n]/.test(selected)) {
+    // A URL pasted over a URL replaces it
+    if (!url || selected.length === 0 || /[[\]\n]/.test(selected) || singleUrl(selected)) {
         return undefined;
     }
     // Parentheses would end the link early

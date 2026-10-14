@@ -9,7 +9,7 @@ import {
     analyzeLine, BOX_BORDER_REGEX, BoxSection, countListItems, DAY_HEADER_REGEX, DaySection, DocStructure,
     outermostFolded, parseStructure, Section, sectionsContaining, sectionsOf, updateScopesTouching
 } from './structure';
-import { findLinks, linkForPaste } from './links';
+import { findLinks, linkForPaste, singleUrl } from './links';
 
 /** Marks transactions that adopt the host's text ('update'): never sent back, never filtered */
 export const remoteAnnotation = Annotation.define<boolean>();
@@ -670,6 +670,23 @@ export function pasteAsLink(tr: Transaction): TransactionSpec | undefined {
     const line = state.doc.lineAt(from);
     if (state.doc.lineAt(to).number !== line.number || regionAt(state, from) || regionAt(state, to)) {
         return undefined;
+    }
+    // A URL pasted over the text or address of a link that shows its own URL, [url](url), changes both
+    const url = singleUrl(pasted);
+    const showsOwnUrl = url && findLinks(line.text).find(link => {
+        if (link.kind !== 'markdown' || line.text.slice(link.textFrom, link.textTo) !== link.href) {
+            return false;
+        }
+        // Its text, or its address between the parentheses
+        const hrefFrom = line.from + link.to - 1 - link.href.length;
+        return (from === line.from + link.textFrom && to === line.from + link.textTo) || (from === hrefFrom && to === line.from + link.to - 1);
+    });
+    if (url && showsOwnUrl) {
+        const insert = `[${url}](${url.replace(/\(/g, '%28').replace(/\)/g, '%29')})`;
+        return {
+            changes: { from: line.from + showsOwnUrl.from, to: line.from + showsOwnUrl.to, insert },
+            selection: EditorSelection.cursor(line.from + showsOwnUrl.from + insert.length), userEvent: 'input.paste', scrollIntoView: true,
+        };
     }
     // Only within the text: not the hidden indentation, box or list marker, and not touching another markdown link
     const textStart = line.from + analyzeLine(line.text, tabSizeOf(state)).textStart;

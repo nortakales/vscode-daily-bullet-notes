@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.2.3 - 2026-10-14
+
+* Rendered view: fixed pasting a new URL over a link's URL sometimes keeping the old URL. A URL pasted over a URL now always replaces it (it could get wrapped into a new link that still showed the old URL), and pasting over either half of a link that shows its own URL changes both
+
 ## 1.2.2 - 2026-10-12
 
 * Rendered view: year and month headers are now the same cyan as day headers
