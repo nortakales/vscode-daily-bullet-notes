@@ -34,5 +34,7 @@ export const UI_ICONS = {
     unfold: ui('<path d="M4.5 6L8 2.5 11.5 6M4.5 10L8 13.5 11.5 10"/>'),
     check: ui('<path d="M3.5 8.5l3 3 6-7"/>'),
     add: ui('<path d="M8 3v10M3 8h10"/>'),
+    /** Six dots: the drag handle of tasks and notes */
+    grip: ui('<path d="M6 3.5h.01M10 3.5h.01M6 8h.01M10 8h.01M6 12.5h.01M10 12.5h.01" stroke-width="2.4" stroke-linecap="round"/>'),
     info: ui('<circle cx="8" cy="8" r="6.25"/><path d="M8 7.25v4M8 4.9v.2"/>'),
 };

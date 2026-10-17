@@ -1156,3 +1156,80 @@ body.vscode-reduce-motion *::after {
     outline: 1px solid var(--dbm-focus);
     outline-offset: 1px;
 }
+
+/* ----- Dragging tasks and notes (drag.ts) ----- */
+
+.dbm-drag-handle {
+    position: absolute;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    border-radius: 4px;
+    color: var(--dbm-muted);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.dbm-drag-handle[hidden] {
+    display: none;
+}
+
+.dbm-drag-handle:hover {
+    background: var(--dbm-hover);
+    color: var(--dbm-fg);
+}
+
+.dbm-drag-handle .dbm-ui {
+    width: 14px;
+    height: 14px;
+}
+
+.dbm-dragging,
+.dbm-dragging * {
+    cursor: grabbing !important;
+}
+
+/* The copy of the item that follows the pointer */
+.dbm-drag-ghost {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 5;
+    box-sizing: border-box;
+    padding: 2px 0;
+    border: 1px solid var(--dbm-border);
+    border-radius: 6px;
+    background: var(--dbm-bg);
+    box-shadow: 0 6px 18px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.4));
+    opacity: 0.92;
+    pointer-events: none;
+    font: inherit;
+    line-height: 20px;
+}
+
+/* Lines inside the copies look like the real ones (whose rules need .cm-content) */
+.dbm-drag-ghost .cm-line,
+.dbm-drop-preview .cm-line {
+    padding: 1px 0;
+    padding-left: calc((var(--dbm-indent, 0) + 1) * var(--dbm-step));
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.dbm-drag-ghost .dbm-task,
+.dbm-drag-ghost .dbm-list-item,
+.dbm-drop-preview .dbm-task,
+.dbm-drop-preview .dbm-list-item {
+    text-indent: calc(-1 * var(--dbm-step));
+}
+
+/* Where the item will land: a faded copy, at the level it will get */
+.dbm-root .cm-editor .cm-content .dbm-drop-preview {
+    border-radius: 6px;
+    background: var(--dbm-hover);
+    opacity: 0.55;
+    pointer-events: none;
+}

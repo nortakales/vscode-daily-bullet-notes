@@ -80,6 +80,7 @@ The rendered view shows your file as a journal: years and months become headings
 * Choose which view opens `.dbm` files with the `Default View` setting
 * Click a task's status icon to change its status (or press `Ctrl+Enter` / `Cmd+Enter` on the task). Parent tasks don't have a picker; their status comes from their sub-tasks, just like in the text view
 * `Enter` starts a new task, `Tab`/`Shift+Tab` indent and un-indent, and `Backspace` at the start of a task turns it into a note
+* Drag a task or note by the grip that appears to its left when you hover it to move it, with everything under it, anywhere in a day or list (or into another day or list). Drag right or left to nest it under the item above or take it out. `Alt+Up` / `Alt+Down` move it with everything under it too
 * Click a year, month or day to fold it. Folded days show a summary of their tasks
 * The daily log and your lists are on separate `Daily Log` and `Lists` tabs in the toolbar at the top (turn off `Rendered View: Tabs` to have everything on one page). Searching, or commands like `Add New List`, switch to the right tab for you
 * The toolbar stays visible while you scroll (without tabs, turn off `Rendered View: Pin Toolbar` to let it scroll away): `Standup view` folds everything except the two most recent days, `New list` adds a list, and `Expand all` / `Collapse all` unfold or fold everything on the tab

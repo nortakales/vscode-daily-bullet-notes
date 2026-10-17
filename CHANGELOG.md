@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.3.0 - 2026-10-17
+
+* Rendered view: drag and drop tasks and notes. Hover an item to get a grip on its left, and drag it (with everything under it) anywhere in a day or list, or into another one. The item follows the pointer, and a faded copy shows exactly where it will land. Drag right or left to nest it under the item above or take it out; parent statuses update in both places, and one undo puts it back
+* Rendered view: `Alt+Up` / `Alt+Down` move an item with everything under it, past the item above or below with everything under that, like outliners do
+
 ## 1.2.3 - 2026-10-14
 
 * Rendered view: fixed pasting a new URL over a link's URL sometimes keeping the old URL. A URL pasted over a URL now always replaces it (it could get wrapped into a new link that still showed the old URL), and pasting over either half of a link that shows its own URL changes both

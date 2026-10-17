@@ -11,6 +11,8 @@ import {
 } from './commands';
 import { blockField, dbmActions, DbmActions, findStatusIcon, IS_MAC, isLockedTask, linePlugin, linkAtEvent, linkPlugin } from './decorations';
 import { StatusPicker } from './picker';
+import { moveItemCommand } from './moving';
+import { dragHandles } from './drag';
 import { caretLayer } from './caret';
 import { logBar } from './logbar';
 import { pinnedHeaders } from './pinned';
@@ -342,8 +344,9 @@ export function createExtensions(options: EditorOptions): Extension[] {
         { key: 'Mod-Enter', run: view => openPickerAtCursor(view, options) },
         { key: 'ArrowLeft', run: run(arrowLeftCommand) },
         { key: 'Home', run: view => home(view, false), shift: view => home(view, true) },
-        { key: 'Alt-ArrowUp', run: always(state => moveLinesCommand(state, -1)) },
-        { key: 'Alt-ArrowDown', run: always(state => moveLinesCommand(state, 1)) },
+        // An item moves with everything under it, like in outliners; anything else line by line
+        { key: 'Alt-ArrowUp', run: always(state => moveItemCommand(state, -1) ?? moveLinesCommand(state, -1)) },
+        { key: 'Alt-ArrowDown', run: always(state => moveItemCommand(state, 1) ?? moveLinesCommand(state, 1)) },
         { key: 'Mod-Shift-[', run: foldAtCursor },
         { key: 'Mod-Shift-]', run: unfoldAtCursor },
         { key: 'Mod-f', run: openSearchPanel },
@@ -358,6 +361,7 @@ export function createExtensions(options: EditorOptions): Extension[] {
         // Before search(), so the toolbar sits above the search panel
         logBar,
         pinnedHeaders,
+        dragHandles,
         // Ctrl/Cmd+Click opens a link; a plain click just places the cursor
         EditorView.domEventHandlers({
             mousedown(event, view) {
