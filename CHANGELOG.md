@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.3.1 - 2026-11-04
+
+* Rendered view: a folded day's summary now counts leaf tasks (tasks with no sub-tasks, the actual units of work) instead of top level tasks, and blocked tasks are no longer also counted as carried
+
 ## 1.3.0 - 2026-10-17
 
 * Rendered view: drag and drop tasks and notes. Hover an item to get a grip on its left, and drag it (with everything under it) anywhere in a day or list, or into another one. The item follows the pointer, and a faded copy shows exactly where it will land. Drag right or left to nest it under the item above or take it out; parent statuses update in both places, and one undo puts it back

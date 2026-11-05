@@ -520,23 +520,36 @@ function closestTasks(nodes: Node[], out: Node[] = []): Node[] {
     return out;
 }
 
+/** Tasks with no sub-tasks among the given nodes, looking through notes (notes under a task don't count as sub-tasks) */
+function leafTasks(nodes: Node[], out: Node[] = []): Node[] {
+    for (const node of nodes) {
+        const subtasks = closestTasks(node.children);
+        if (node.status !== undefined && subtasks.length === 0) {
+            out.push(node);
+        } else {
+            leafTasks(node.children, out);
+        }
+    }
+    return out;
+}
+
 export interface DaySummary {
-    /** Statuses of the day's top level tasks, in order */
+    /** Statuses of the day's leaf tasks (tasks with no sub-tasks: the actual units of work), in order */
     statuses: StatusKind[];
     done: number;
     blocked: number;
-    /** Top level tasks that are not done or removed (they carry over to the next day) */
+    /** Leaf tasks that are not done, removed or blocked (they carry over to the next day; blocked ones too, but those are counted separately) */
     carried: number;
     /** e.g. "1 done · 1 blocked · 3 carried" */
     text: string;
 }
 
 export function summarizeDay(lines: readonly string[], tabSize: number): DaySummary {
-    const tasks = closestTasks(buildTree(lines, tabSize));
+    const tasks = leafTasks(buildTree(lines, tabSize));
     const statuses = tasks.map(task => statusKind(task.status!));
     const done = statuses.filter(status => status === 'done').length;
     const blocked = statuses.filter(status => status === 'blocked').length;
-    const carried = statuses.filter(status => status !== 'done' && status !== 'removed').length;
+    const carried = statuses.filter(status => status !== 'done' && status !== 'removed' && status !== 'blocked').length;
     const parts: string[] = [];
     if (done) {
         parts.push(`${done} done`);

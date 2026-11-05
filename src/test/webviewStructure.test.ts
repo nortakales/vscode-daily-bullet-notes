@@ -193,11 +193,14 @@ suite('Webview structure: lines, summaries and day boundaries', () => {
             ['open', 'open', 'done', 'done', 'progress', 'blocked', 'removed', 'tomorrow', 'unknown']);
     });
 
-    test('day summary counts top level tasks, looking through notes', () => {
+    test('day summary counts leaf tasks, looking through notes', () => {
         const summary = summarizeDay([
             '[+] Migrate reports service',
             '    [x] dump + restore staging',
+            '    A note about the migration',
+            '        [ ] cut over prod',
             '[/] Fix flaky test',
+            '    just a note, not a sub-task',
             '[x] Review PR',
             'A heading note',
             '    [ ] task under a note',
@@ -205,8 +208,8 @@ suite('Webview structure: lines, summaries and day boundaries', () => {
             '[>] tomorrow',
             '',
         ], 4);
-        assert.deepStrictEqual(summary.statuses, ['progress', 'blocked', 'done', 'open', 'removed', 'tomorrow']);
-        assert.strictEqual(summary.text, '1 done · 1 blocked · 4 carried');
+        assert.deepStrictEqual(summary.statuses, ['done', 'open', 'blocked', 'done', 'open', 'removed', 'tomorrow']);
+        assert.strictEqual(summary.text, '2 done · 1 blocked · 3 carried');
         assert.strictEqual(summarizeDay(['just a note'], 4).text, 'Notes only');
         assert.strictEqual(summarizeDay(['', ''], 4).text, 'Empty');
     });
