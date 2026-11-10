@@ -25,7 +25,7 @@
     "lists",
     "todo list"
   ],
-  "version": "1.3.1",
+  "version": "1.3.2",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -78,6 +78,11 @@
       {
         "command": "daily-bullet-notes.renderedView.find",
         "title": "Find in Rendered View",
+        "category": "Daily Bullet Notes"
+      },
+      {
+        "command": "daily-bullet-notes.renderedView.copyLink",
+        "title": "Copy Link Address",
         "category": "Daily Bullet Notes"
       }
     ],
@@ -208,6 +213,11 @@
       ],
       "webview/context": [
         {
+          "command": "daily-bullet-notes.renderedView.copyLink",
+          "when": "webviewId == 'daily-bullet-notes.renderedView' && dbmLinkHref",
+          "group": "0_link@1"
+        },
+        {
           "command": "daily-bullet-notes.addTodayAndStandupView",
           "when": "webviewId == 'daily-bullet-notes.renderedView'",
           "group": "1_dbm@1"
@@ -244,6 +254,10 @@
         },
         {
           "command": "daily-bullet-notes.renderedView.find",
+          "when": "false"
+        },
+        {
+          "command": "daily-bullet-notes.renderedView.copyLink",
           "when": "false"
         }
       ]

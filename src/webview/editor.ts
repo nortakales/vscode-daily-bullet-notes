@@ -376,6 +376,17 @@ export function createExtensions(options: EditorOptions): Extension[] {
                 options.openLink(href);
                 return true;
             },
+            // VS Code's webview context menu reads data-vscode-context from the clicked element and its ancestors:
+            // over a link, it shows Copy Link Address
+            contextmenu(event, view) {
+                const href = linkAtEvent(view, event);
+                if (href) {
+                    document.body.dataset.vscodeContext = JSON.stringify({ dbmLinkHref: href });
+                } else {
+                    delete document.body.dataset.vscodeContext;
+                }
+                return false;
+            },
         }),
         // A centered column of limited width, or the full width of the panel
         EditorView.editorAttributes.compute([configField], state => ({ class: state.field(configField).centered === false ? 'dbm-full-width' : 'dbm-centered' })),

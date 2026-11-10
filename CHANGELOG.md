@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.3.2 - 2026-11-10
+
+* Rendered view: right-click a link for Copy Link Address, which copies its URL
+
 ## 1.3.1 - 2026-11-04
 
 * Rendered view: a folded day's summary now counts leaf tasks (tasks with no sub-tasks, the actual units of work) instead of top level tasks, and blocked tasks are no longer also counted as carried

@@ -89,7 +89,7 @@ The rendered view shows your file as a journal: years and months become headings
 * When today isn't in your log yet, an `Add Today & Standup View` button shows below your most recent day, and the `Lists` tab ends with a `New list` button
 * `Ctrl+F` / `Cmd+F` searches the file
 * Lines starting with `- `, `* ` or `1. ` show as bullets and numbered lists, like markdown. `Enter` continues the list
-* Markdown links like `[text](https://example.com)` show as links; `Ctrl+Click` / `Cmd+Click` opens them. Select some text and paste a URL to turn it into a link
+* Markdown links like `[text](https://example.com)` show as links; `Ctrl+Click` / `Cmd+Click` opens them. Select some text and paste a URL to turn it into a link. Right-click a link to copy its URL
 * The rendered view is a centered column by default; turn off the `Rendered View: Centered Layout` setting to use the full width of the editor
 
 ## Customizing Colors

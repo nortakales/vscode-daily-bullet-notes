@@ -47,6 +47,12 @@ export function activate(context: vscode.ExtensionContext) {
 				renderedViewProvider.runCommand(target.document, 'find');
 			}
 		}),
+		// From the rendered view's context menu, which passes its data-vscode-context
+		vscode.commands.registerCommand("daily-bullet-notes.renderedView.copyLink", (context?: { dbmLinkHref?: string }) => {
+			if (context?.dbmLinkHref) {
+				vscode.env.clipboard.writeText(context.dbmLinkHref);
+			}
+		}),
 		vscode.workspace.onDidChangeConfiguration(event => {
 			if (event.affectsConfiguration('daily-bullet-notes.defaultView')) {
 				syncDefaultViewAssociation().catch(console.error);
