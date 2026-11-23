@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.3.3 - 2026-11-23
+
+* Rendered view: fixed dragging an item one line past the end of a day, which left a blank line before it, or deleted it on the last day (when lists follow)
+
 ## 1.3.2 - 2026-11-10
 
 * Rendered view: right-click a link for Copy Link Address, which copies its URL

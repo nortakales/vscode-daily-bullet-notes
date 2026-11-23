@@ -62,7 +62,8 @@ function levelOf(text: string, tabSize: number): number {
 
 /**
  * Whether the block can be dropped in the gap before 0-based line `gap` (gap = line count: the end): the line
- * above must be in a day or a list (or be its header), not inside a folded section or the other tab.
+ * above must be in a day or a list (or be its header), not inside a folded section or the other tab, and not
+ * one of the blank lines that end the section (the last place is right after its last line of text).
  */
 export function canDropAt(state: EditorState, block: ItemBlock, gap: number): boolean {
     const doc = state.doc;
@@ -72,6 +73,16 @@ export function canDropAt(state: EditorState, block: ItemBlock, gap: number): bo
     const above = gap - 1;
     if (!inSection(state, above)) {
         return false;
+    }
+    if (doc.line(above + 1).text.trim() === '') {
+        const scope = updateScopeAt(getLineOf(state), doc.lines, above);
+        let i = gap;
+        while (scope && i <= scope.end && doc.line(i + 1).text.trim() === '') {
+            i++;
+        }
+        if (!scope || i > scope.end) {
+            return false;
+        }
     }
     const hidden = tabHiddenLines(state);
     if (hidden && hidden.first <= above && above <= hidden.last) {
@@ -170,11 +181,15 @@ export function moveBlockSpec(state: EditorState, block: ItemBlock, gap: number,
     const removal = block.last + 1 < doc.lines
         ? { from: blockFrom, to: doc.line(block.last + 2).from }
         : { from: doc.line(block.first).to, to: blockTo };
-    const insertion = gap < doc.lines
+    // Before the line below, or after the line above when there's none or it's on the other tab (changes there
+    // are dropped)
+    const hidden = tabHiddenLines(state);
+    const before = gap < doc.lines && !(hidden && hidden.first <= gap && gap <= hidden.last);
+    const insertion = before
         ? { from: doc.line(gap + 1).from, insert: text + '\n' }
-        : { from: doc.length, insert: '\n' + text };
+        : { from: doc.line(gap).to, insert: '\n' + text };
     const changes = state.changes([removal, insertion]);
-    const start = changes.mapPos(insertion.from, -1) + (gap < doc.lines ? 0 : 1);
+    const start = changes.mapPos(insertion.from, -1) + (before ? 0 : 1);
     const firstLength = text.indexOf('\n') < 0 ? text.length : text.indexOf('\n');
     return { changes, selection: EditorSelection.cursor(start + firstLength), userEvent, scrollIntoView: true };
 }

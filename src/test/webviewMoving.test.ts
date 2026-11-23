@@ -76,7 +76,9 @@ suite('Webview moving items', () => {
         const state = create(lines);
         const block = itemBlockAt(state, at('[ ] B'))!;
         assert.ok(canDropAt(state, block, at('[+] A')), 'right after a day header');
-        assert.ok(canDropAt(state, block, at(DAY5)), 'at the end of a day');
+        assert.ok(canDropAt(state, block, at('C note') + 1), 'at the end of a day');
+        assert.ok(!canDropAt(state, block, at(DAY5)), 'not after the blank line that ends a day');
+        assert.ok(!canDropAt(state, block, at('[x] D') + 2), 'not after the blank line that ends the document');
         assert.ok(canDropAt(state, block, at('[x] D') + 1), 'into another day');
         assert.ok(!canDropAt(state, block, at('    [ ] b1')), 'not inside itself');
         assert.ok(!canDropAt(state, block, H), 'not between the month box and the first day');
@@ -90,7 +92,7 @@ suite('Webview moving items', () => {
         assert.deepStrictEqual(dropLevels(state, block, at('    [x] a1')), { min: 1, max: 1 }, 'between a parent and its first child');
         assert.deepStrictEqual(dropLevels(state, block, at('[ ] B')), { min: 0, max: 3 }, 'after a deeply nested note');
         // b1 is the last item above (C is the one moving)
-        assert.deepStrictEqual(dropLevels(state, block, at(DAY5)), { min: 0, max: 2 }, 'at the end of a day, after a blank line');
+        assert.deepStrictEqual(dropLevels(state, block, at('C note') + 1), { min: 0, max: 2 }, 'at the end of a day, before a blank line');
     });
 
     test('dragging moves the item with its sub-items, re-indented, and updates parents in both places', () => {
@@ -152,6 +154,19 @@ suite('Webview moving items', () => {
         // From the list into the day
         state = apply(state, moveBlockSpec(state, itemBlockAt(state, H + 3 + list.length)!, H + 2, 0));
         assert.deepStrictEqual(body(state).slice(0, 4), [DAY4, '[ ] A', '- two§', '    - two.a']);
+    });
+
+    test('the end of the last day, with the lists on the other tab', () => {
+        const list = getBoxHeader('Backlog').split('\n');
+        const config = { ...CONFIG, tabs: true };
+        for (const blank of [[''], []]) {
+            let state = EditorState.create({ doc: [...HEAD, DAY4, '[ ] A', '[ ] B', ...blank, ...list, '- one'].join('\n'), extensions: dbmStateExtensions(config) });
+            const block = itemBlockAt(state, H + 1)!;
+            const end = H + 3 + blank.length;
+            assert.strictEqual(canDropAt(state, block, end), blank.length === 0, 'not after the blank line before the lists');
+            state = apply(state, moveBlockSpec(state, block, H + 3, 0));
+            assert.deepStrictEqual(state.doc.toString().split('\n').slice(H), [DAY4, '[ ] B', '[ ] A', ...blank, ...list, '- one']);
+        }
     });
 
     suite('Alt+Up / Alt+Down', () => {
