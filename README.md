@@ -78,7 +78,7 @@ The rendered view shows your file as a journal: years and months become headings
 
 * Switch between the text view and the rendered view at any time with the button in the editor title bar (or `Open Rendered View` / `Open Text View` from the command palette)
 * Choose which view opens `.dbm` files with the `Default View` setting
-* Click a task's status icon to change its status (or press `Ctrl+Enter` / `Cmd+Enter` on the task). Parent tasks don't have a picker; their status comes from their sub-tasks, just like in the text view
+* Click a task's status icon to change its status (or press `Ctrl+Enter` / `Cmd+Enter` on the task), or pick `Plain note` at the bottom to turn the task into a note. On a plain note, click the empty space where its icon would be to make it a task. Parent tasks don't have a picker; their status comes from their sub-tasks, just like in the text view
 * `Enter` starts a new task, `Tab`/`Shift+Tab` indent and un-indent, and `Backspace` at the start of a task turns it into a note
 * Drag a task or note by the grip that appears to its left when you hover it to move it, with everything under it, anywhere in a day or list (or into another day or list). Drag right or left to nest it under the item above or take it out. `Alt+Up` / `Alt+Down` move it with everything under it too
 * Click a year, month or day to fold it. Folded days show a summary of their tasks

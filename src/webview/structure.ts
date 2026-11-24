@@ -130,6 +130,11 @@ export function analyzeLine(text: string, tabSize: number): LineInfo {
     return info;
 }
 
+/** A note that isn't a list item: its checkbox column is empty, and it can be made a task from there */
+export function isPlainNote(info: LineInfo): boolean {
+    return info.kind === 'note' && !info.list;
+}
+
 export function leadingWhitespace(text: string): number {
     const match = /^\s*/.exec(text);
     return match ? match[0].length : 0;

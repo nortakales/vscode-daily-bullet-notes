@@ -271,6 +271,39 @@ class StatusIconWidget extends WidgetType {
     }
 }
 
+/** The empty checkbox column of a plain note: on hover it shows a faint box, and a click opens the status picker */
+class NoteIconWidget extends WidgetType {
+    eq() {
+        return true;
+    }
+
+    toDOM(view: EditorView): HTMLElement {
+        const button = element('button', 'dbm-icon dbm-icon-note');
+        button.type = 'button';
+        button.tabIndex = -1;
+        button.innerHTML = statusIconSvg('open');
+        button.setAttribute('aria-label', 'Make a task');
+        button.setAttribute('aria-haspopup', 'menu');
+        button.title = 'Click to make this a task';
+        button.addEventListener('mousedown', event => {
+            event.preventDefault();
+        });
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            const line = view.state.doc.lineAt(view.posAtDOM(button)).number;
+            view.state.facet(dbmActions)?.openPicker(view, line, button);
+        });
+        return button;
+    }
+
+    ignoreEvent() {
+        return true;
+    }
+}
+
+const noteIcon = new NoteIconWidget();
+const noteIconBefore = Decoration.widget({ widget: noteIcon, side: -1 });
+
 /** A list item's marker in the checkbox column: a bullet that varies by depth, or the displayed number */
 class ListMarkerWidget extends WidgetType {
     constructor(readonly text: string, readonly kind: 'bullet' | 'number') {
@@ -658,8 +691,11 @@ function buildLines(view: EditorView): { decorations: DecorationSet; atomic: Dec
                 atomic.add(line.from, line.from + info.textStart, hidden);
             } else if (info.kind === 'note') {
                 const list = info.list;
-                decorations.add(line.from, line.from, lineDecoration(list ? 'dbm-line dbm-note dbm-list-item' : 'dbm-line dbm-note', level));
-                if (info.indentLength > 0) {
+                decorations.add(line.from, line.from, lineDecoration(list ? 'dbm-line dbm-note dbm-list-item' : 'dbm-line dbm-note dbm-plain-note', level));
+                if (!list) {
+                    // The checkbox column, in place of the hidden indentation (or before the text)
+                    decorations.add(line.from, line.from + info.indentLength, info.indentLength > 0 ? Decoration.replace({ widget: noteIcon }) : noteIconBefore);
+                } else if (info.indentLength > 0) {
                     decorations.add(line.from, line.from + info.indentLength, hidden);
                 }
                 if (list) {

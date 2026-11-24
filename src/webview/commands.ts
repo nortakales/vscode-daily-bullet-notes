@@ -326,6 +326,38 @@ export function setStatusCommand(state: EditorState, lineNumber: number, status:
     };
 }
 
+/** Turns a task into a plain note: its box and the space after it go, the text and indentation stay. lineNumber is 1-based. */
+export function toNoteCommand(state: EditorState, lineNumber: number): TransactionSpec | undefined {
+    if (lineNumber < 1 || lineNumber > state.doc.lines) {
+        return undefined;
+    }
+    const line = state.doc.line(lineNumber);
+    const info = analyzeLine(line.text, settings(state).tabSize);
+    if (info.kind !== 'task') {
+        return undefined;
+    }
+    return {
+        changes: { from: line.from + info.boxStart, to: line.from + info.textStart },
+        userEvent: 'input.status',
+    };
+}
+
+/** Turns a plain note (not a list item) into a task with a status: a box goes before its text. lineNumber is 1-based. */
+export function toTaskCommand(state: EditorState, lineNumber: number, status: StatusKey): TransactionSpec | undefined {
+    if (lineNumber < 1 || lineNumber > state.doc.lines) {
+        return undefined;
+    }
+    const line = state.doc.line(lineNumber);
+    const info = analyzeLine(line.text, settings(state).tabSize);
+    if (info.kind !== 'note' || info.list) {
+        return undefined;
+    }
+    return {
+        changes: { from: line.from + info.indentLength, insert: `[${STATUS_INFO[status].char}] ` },
+        userEvent: 'input.status',
+    };
+}
+
 // ---------------------------------------------------------------------------------------------
 // Cursor movement
 

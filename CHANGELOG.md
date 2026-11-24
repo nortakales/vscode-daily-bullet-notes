@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.3.4 - 2026-11-24
+
+* Rendered view: the status picker has a Plain note option at the bottom that turns a task into a note
+* Rendered view: hover the empty checkbox column of a plain note and click it (or press `Ctrl+Enter` / `Cmd+Enter`) to make it a task
+
 ## 1.3.3 - 2026-11-23
 
 * Rendered view: fixed dragging an item one line past the end of a day, which left a blank line before it, or deleted it on the last day (when lists follow)

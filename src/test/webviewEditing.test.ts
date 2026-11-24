@@ -3,7 +3,7 @@ import { ChangeSet, EditorSelection, EditorState, TransactionSpec } from '@codem
 import type { ViewConfig } from '../rendered/protocol';
 import { applyLineChanges } from '../rendered/lineChanges';
 import {
-    backspaceCommand, deleteForwardCommand, enterCommand, indentCommand, moveLinesCommand, setStatusCommand
+    backspaceCommand, deleteForwardCommand, enterCommand, indentCommand, moveLinesCommand, setStatusCommand, toNoteCommand, toTaskCommand
 } from '../webview/commands';
 import { clampCursor, dbmStateExtensions, foldEffect, foldField, regionAt, remoteAnnotation, setFoldsEffect, structureField } from '../webview/state';
 import { BOX_BORDER_REGEX, DAY_HEADER_REGEX, DocStructure, isBoxAt, parseStructure } from '../webview/structure';
@@ -178,6 +178,27 @@ suite('Webview editing: statuses', () => {
         const { tr } = apply(state, setStatusCommand(state, state.doc.lines, 'tomorrow'));
         assert.deepStrictEqual(toLineChanges(state.doc, tr.changes), [{ fromLine: 10, fromCharacter: 1, toLine: 10, toCharacter: 1, text: '>' }]);
         assert.strictEqual(setStatusCommand(state, state.doc.lines, 'open'), undefined);
+    });
+
+    test('a task becomes a plain note, keeping its indentation, and its parent updates', () => {
+        const state = create(DAY + '[+] parent\n    [x] one\n    [ ] two');
+        const after = apply(state, toNoteCommand(state, state.doc.lines)).state;
+        assert.strictEqual(after.doc.toString(), DAY + '[x] parent\n    [x] one\n    two');
+        assert.strictEqual(toNoteCommand(after, after.doc.lines), undefined, 'already a note');
+        const empty = create(DAY + '[] task');
+        assert.strictEqual(apply(empty, toNoteCommand(empty, empty.doc.lines)).state.doc.toString(), DAY + 'task');
+    });
+
+    test('a plain note becomes a task, keeping its indentation, and its parent updates', () => {
+        const state = create(DAY + '[x] parent\n    [x] one\n    two');
+        const after = apply(state, toTaskCommand(state, state.doc.lines, 'open')).state;
+        assert.strictEqual(after.doc.toString(), DAY + '[+] parent\n    [x] one\n    [ ] two');
+        assert.strictEqual(toTaskCommand(after, after.doc.lines, 'done'), undefined, 'already a task');
+        const list = create(DAY + '- item');
+        assert.strictEqual(toTaskCommand(list, list.doc.lines, 'open'), undefined, 'not list items');
+        // A note with sub-tasks becomes a parent with a computed status
+        const parent = create(DAY + 'note\n    [x] one\n    [x] two');
+        assert.strictEqual(apply(parent, toTaskCommand(parent, parent.doc.lines - 2, 'open')).state.doc.toString(), DAY + '[x] note\n    [x] one\n    [x] two');
     });
 
     test('no parent updates when automatic status updates are off', () => {

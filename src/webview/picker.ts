@@ -1,17 +1,22 @@
-// The status picker: a small menu anchored to a task's icon (role="menu" with menuitemradio items).
-// Arrow keys, Home/End, Enter and Escape navigate; the status characters (Space + x / - >) pick directly.
+// The status picker: a small menu anchored to a task's icon (role="menu" with menuitemradio items), and below
+// them an item that turns the task into a plain note. Arrow keys, Home/End, Enter and Escape navigate; the status
+// characters (Space + x / - >) pick directly, and N picks the plain note.
 
 import type { StatusKey } from '../rendered/protocol';
 import { statusIconSvg, UI_ICONS } from './icons';
 import { STATUS_INFO, STATUS_KEYS, STATUS_ORDER, StatusKind } from './structure';
 
+/** A status, or 'note' to turn the task into a plain note */
+export type PickerChoice = StatusKey | 'note';
+
 export interface PickerRequest {
     /** Where to anchor the menu (the icon's rectangle) */
     anchor: DOMRect;
-    current: StatusKind;
+    /** The task's status, or 'note' for a plain note (which the menu can make a task) */
+    current: StatusKind | 'note';
     /** Accessible name of the task, e.g. its text */
     taskName: string;
-    onPick(status: StatusKey): void;
+    onPick(choice: PickerChoice): void;
     /** Called when the menu closes without a pick */
     onCancel(): void;
 }
@@ -48,13 +53,32 @@ export class StatusPicker {
             this.items.push(item);
             this.menu.appendChild(item);
         }
+        const separator = document.createElement('div');
+        separator.className = 'dbm-picker-separator';
+        separator.setAttribute('role', 'separator');
+        const note = document.createElement('div');
+        note.className = 'dbm-picker-item';
+        note.setAttribute('role', 'menuitemradio');
+        note.tabIndex = -1;
+        note.dataset.status = 'note';
+        note.innerHTML = `<span class="dbm-picker-check">${UI_ICONS.check}</span>${UI_ICONS.note}`;
+        const label = document.createElement('span');
+        label.className = 'dbm-picker-label';
+        label.textContent = 'Plain note';
+        const hint = document.createElement('kbd');
+        hint.textContent = 'N';
+        hint.setAttribute('aria-hidden', 'true');
+        note.append(label, hint);
+        note.setAttribute('aria-keyshortcuts', 'N');
+        this.items.push(note);
+        this.menu.append(separator, note);
         parent.appendChild(this.menu);
 
         this.menu.addEventListener('mousedown', event => event.preventDefault());
         this.menu.addEventListener('click', event => {
             const item = (event.target as HTMLElement).closest<HTMLElement>('.dbm-picker-item');
             if (item) {
-                this.pick(item.dataset.status as StatusKey);
+                this.pick(item.dataset.status as PickerChoice);
             }
         });
         this.menu.addEventListener('mousemove', event => {
@@ -89,7 +113,7 @@ export class StatusPicker {
         }
         this.menu.hidden = false;
         this.position(request.anchor);
-        this.focusItem(Math.max(0, STATUS_ORDER.indexOf(request.current as StatusKey)));
+        this.focusItem(Math.max(0, this.items.findIndex(item => item.dataset.status === request.current)));
     }
 
     /** Closes without picking */
@@ -106,11 +130,11 @@ export class StatusPicker {
         this.menu.hidden = true;
     }
 
-    private pick(status: StatusKey) {
+    private pick(choice: PickerChoice) {
         const request = this.request;
         if (request) {
             this.close();
-            request.onPick(status);
+            request.onPick(choice);
         }
     }
 
@@ -143,11 +167,13 @@ export class StatusPicker {
         } else if (event.key === 'End' || event.key === 'PageDown') {
             this.focusItem(count - 1);
         } else if (event.key === 'Enter') {
-            this.pick(STATUS_ORDER[this.index]);
+            this.pick(this.items[this.index].dataset.status as PickerChoice);
         } else if (event.key === 'Escape' || event.key === 'Tab') {
             this.cancel();
         } else if (!event.ctrlKey && !event.metaKey && !event.altKey && STATUS_KEYS[event.key]) {
             this.pick(STATUS_KEYS[event.key]);
+        } else if (!event.ctrlKey && !event.metaKey && !event.altKey && (event.key === 'n' || event.key === 'N')) {
+            this.pick('note');
         } else {
             handled = false;
         }

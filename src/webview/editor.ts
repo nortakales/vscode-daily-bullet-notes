@@ -7,7 +7,7 @@ import { defaultKeymap } from '@codemirror/commands';
 import { openSearchPanel, search, searchKeymap } from '@codemirror/search';
 import type { HostCommand, RevealTarget, ViewConfig } from '../rendered/protocol';
 import {
-    arrowLeftCommand, backspaceCommand, deleteForwardCommand, enterCommand, indentCommand, moveLinesCommand, setStatusCommand, textStartOf
+    arrowLeftCommand, backspaceCommand, deleteForwardCommand, enterCommand, indentCommand, moveLinesCommand, setStatusCommand, textStartOf, toNoteCommand, toTaskCommand
 } from './commands';
 import { blockField, dbmActions, DbmActions, findStatusIcon, IS_MAC, isLockedTask, linePlugin, linkAtEvent, linkPlugin } from './decorations';
 import { StatusPicker } from './picker';
@@ -20,7 +20,7 @@ import {
     activeTab, clampCursor, configField, dbmStateExtensions, foldEffect, foldField, listsStartLine, Region, regionAt, sectionsOnTab, setFoldsEffect,
     setTabEffect, structureField, tabField, TabId, tabOfLine, tabSizeOf, tabVisibleRange
 } from './state';
-import { analyzeLine, sectionsContaining, sectionsOf, standupDays, standupFoldKeys, STATUS_INFO, statusKind } from './structure';
+import { analyzeLine, isPlainNote, sectionsContaining, sectionsOf, standupDays, standupFoldKeys, STATUS_INFO, statusKind } from './structure';
 
 export const tabSizeCompartment = new Compartment();
 
@@ -279,30 +279,37 @@ export interface EditorOptions {
 export function openPicker(view: EditorView, lineNumber: number, anchor: DOMRect, options: EditorOptions) {
     const line = view.state.doc.line(lineNumber);
     const info = analyzeLine(line.text, view.state.tabSize);
-    if (info.kind !== 'task') {
+    const isNote = isPlainNote(info);
+    if (info.kind !== 'task' && !isNote) {
         return;
     }
     options.picker.open({
         anchor,
-        current: statusKind(info.status),
-        taskName: line.text.slice(info.textStart).trim() || 'task',
-        onPick: status => {
-            const spec = setStatusCommand(view.state, lineNumber, status);
+        current: isNote ? 'note' : statusKind(info.status),
+        taskName: line.text.slice(info.textStart).trim() || (isNote ? 'note' : 'task'),
+        onPick: choice => {
+            if (choice === 'note' && isNote) {
+                view.focus();
+                return;
+            }
+            const spec = choice === 'note' ? toNoteCommand(view.state, lineNumber)
+                : isNote ? toTaskCommand(view.state, lineNumber, choice) : setStatusCommand(view.state, lineNumber, choice);
             if (spec) {
                 view.dispatch(spec);
             }
-            options.announce(`Status: ${STATUS_INFO[status].label}`);
+            options.announce(choice === 'note' ? 'Turned into a plain note' : `Status: ${STATUS_INFO[choice].label}`);
             view.focus();
         },
         onCancel: () => view.focus(),
     });
 }
 
-/** Mod-Enter: the status picker for the task on the cursor line */
+/** Mod-Enter: the status picker for the task (or plain note) on the cursor line */
 function openPickerAtCursor(view: EditorView, options: EditorOptions): boolean {
     const state = view.state;
     const line = state.doc.lineAt(state.selection.main.head);
-    if (analyzeLine(line.text, state.tabSize).kind !== 'task' || regionAt(state, line.from)) {
+    const info = analyzeLine(line.text, state.tabSize);
+    if ((info.kind !== 'task' && !isPlainNote(info)) || regionAt(state, line.from)) {
         return true;
     }
     if (isLockedTask(state, line.number)) {

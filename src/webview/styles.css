@@ -767,7 +767,8 @@ body.vscode-high-contrast .dbm-logbar {
 /* Tasks and list items hang their icon or marker in the column before the text, so wrapped lines line up
    with the text */
 .dbm-root .cm-editor .cm-content .dbm-task,
-.dbm-root .cm-editor .cm-content .dbm-list-item {
+.dbm-root .cm-editor .cm-content .dbm-list-item,
+.dbm-root .cm-editor .cm-content .dbm-plain-note {
     text-indent: calc(-1 * var(--dbm-step));
 }
 
@@ -794,6 +795,16 @@ body.vscode-high-contrast .dbm-logbar {
 
 .dbm-icon:hover {
     background: var(--dbm-hover);
+}
+
+/* A plain note's empty checkbox column: a faint open box on hover */
+.dbm-icon-note .dbm-ic {
+    opacity: 0;
+    color: var(--dbm-muted);
+}
+
+.dbm-icon-note:hover .dbm-ic {
+    opacity: 0.6;
 }
 
 .dbm-icon.dbm-locked {
@@ -936,6 +947,12 @@ body.vscode-high-contrast .dbm-logbar {
     background: var(--vscode-list-activeSelectionBackground, var(--vscode-list-hoverBackground, #04395e));
     color: var(--vscode-list-activeSelectionForeground, inherit);
     box-shadow: inset 0 0 0 1px var(--dbm-focus, var(--vscode-focusBorder, #0078d4));
+}
+
+.dbm-picker-separator {
+    height: 1px;
+    margin: 4px 2px;
+    background: var(--vscode-menu-separatorBackground, var(--vscode-widget-border, #454545));
 }
 
 .dbm-picker-check {
